@@ -1,0 +1,1501 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#EDF0EB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151917" media="(prefers-color-scheme: dark)">
+<title>数独</title>
+<style>
+@font-face { font-family: "Fraunces"; font-weight: 400; src: url(fonts/fraunces-latin-400-normal.woff2) format("woff2"); font-display: block; }
+@font-face { font-family: "Fraunces"; font-weight: 600; src: url(fonts/fraunces-latin-600-normal.woff2) format("woff2"); font-display: block; }
+
+:root {
+  --bg: #EDF0EB;
+  --surface: #F8FAF6;
+  --ink: #1C2320;
+  --ink-2: #5C6661;
+  --ink-3: #9AA39E;
+  --line: #CDD3CC;
+  --line-bold: #3A443F;
+  --accent: #2C6A57;
+  --accent-soft: #D9E6DF;
+  --accent-softer: #E7EEE9;
+  --same: #BFD6CB;
+  --error: #B23F2C;
+  --error-soft: #F3DCD6;
+  --star: #C08A2D;
+  --num: "Fraunces", Georgia, serif;
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151917; --surface: #1C211F; --ink: #E3E8E4; --ink-2: #A3ADA7; --ink-3: #66706B;
+    --line: #2F3734; --line-bold: #8C9892; --accent: #82C4AA; --accent-soft: #24352E;
+    --accent-softer: #22302A; --same: #2F4A3F; --error: #E8806C; --error-soft: #3A2421;
+    --star: #E0B25A; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--ui);
+  -webkit-user-select: none; user-select: none; overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg { display: block; }
+
+.screen { display: none; min-height: 100%; padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px); }
+.screen.on { display: flex; flex-direction: column; align-items: center; }
+#game.on { justify-content: center; }
+.wrap { width: 100%; max-width: 480px; }
+
+/* ---------- 首页 ---------- */
+.home-head { display: flex; align-items: flex-end; justify-content: space-between; padding: 28px 2px 22px; }
+.home-title { font-family: var(--num); font-weight: 600; font-size: 44px; line-height: 1; letter-spacing: .04em; margin: 0; }
+.home-sub { color: var(--ink-2); font-size: 14px; margin-top: 10px; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 22px; color: var(--ink-2); }
+.icon-btn:active { background: var(--accent-softer); }
+
+.continue {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: var(--ink); color: var(--bg); border-radius: 14px; padding: 16px 20px; margin-bottom: 30px;
+}
+.continue b { font-weight: 600; font-size: 17px; }
+.continue span { font-size: 13px; opacity: .7; }
+
+.tier { margin-bottom: 26px; }
+.tier-head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 12px; }
+.tier-name { font-size: 17px; font-weight: 600; }
+.tier-meta { font-size: 13px; color: var(--ink-3); }
+.levels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 */
+.lv {
+  aspect-ratio: 1; border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  font-family: var(--num); font-size: clamp(16px, 5vw, 20px); line-height: 1; font-variant-numeric: lining-nums;
+}
+.lv .st { display: flex; gap: 2px; height: 6px; }
+.lv .bt { font-family: var(--ui); font-size: 10px; line-height: 12px; height: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.lv.cur .bt { color: var(--ink-3); }
+.lv .st i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
+.lv .st i.f { background: var(--star); }
+.lv.cur { border-color: var(--accent); border-width: 2px; color: var(--accent); }
+.lv.locked { background: transparent; color: var(--ink-3); border-style: dashed; }
+.lv.locked .st { visibility: hidden; }
+.lv:not(.locked):active { background: var(--accent-soft); }
+
+/* ---------- 游戏 ---------- */
+.bar { display: flex; align-items: center; justify-content: space-between; height: 48px; margin-bottom: 6px; }
+.bar-mid { text-align: center; min-width: 0; }
+.bar-title { font-size: 16px; font-weight: 600; }
+.bar-tier { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.bar-title, .bar-tier { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 窄屏大字时不换行、不挤出顶栏 */
+.stats { display: flex; justify-content: space-between; color: var(--ink-2); font-size: 14px; padding: 6px 4px 10px; font-variant-numeric: tabular-nums; }
+.stats .err.has { color: var(--error); }
+
+.board {
+  --gap: 1px;
+  width: min(100%, calc(100vh - 300px)); margin: 0 auto; aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, 1fr);
+  border: 2px solid var(--line-bold); border-radius: 6px; overflow: hidden; background: var(--surface);
+  touch-action: manipulation;
+}
+.cell {
+  position: relative; display: grid; place-items: center;
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  font-family: var(--num); font-variant-numeric: lining-nums;
+  container-type: size;
+}
+.cell.lastc { border-right: 0; }
+.cell.lastr { border-bottom: 0; }
+.cell.br { border-right: 2px solid var(--line-bold); }
+.cell.bb { border-bottom: 2px solid var(--line-bold); }
+.cell.zone { background: var(--accent-softer); }
+.cell.same { background: var(--same); }
+.cell.sel { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.cell.sel.same { background: var(--same); }
+.v { font-size: min(6.4vw, 34px); font-size: 64cqh; line-height: 1; font-weight: 400; }
+.cell.given .v { font-weight: 600; color: var(--ink); }
+.cell.user .v { color: var(--accent); }
+.cell.wrong .v { color: var(--error); }
+.cell.wrong { background: var(--error-soft); }
+.cell.wrong.sel { background: var(--error-soft); box-shadow: inset 0 0 0 2px var(--error); }
+.cell.flash { animation: flash .5s ease-out; }
+@keyframes flash { from { background: var(--accent); } }
+.notes {
+  position: absolute; top: 2px; right: 2px; bottom: 2px; left: 2px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+  font-family: var(--ui); font-size: min(2.6vw, 13px); font-size: 26cqh; line-height: 1; color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.notes span { display: grid; place-items: center; }
+.notes span.hi { color: var(--bg); background: var(--accent); border-radius: 30%; }
+
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 18px 0 12px; }
+.tool { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; color: var(--ink-2); font-size: 12px; border-radius: 12px; position: relative; }
+.tool:active { background: var(--accent-softer); }
+.tool:disabled { opacity: .35; }
+.tool .ic { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; }
+.tool.on { color: var(--accent); }
+.tool.on .ic { background: var(--accent); color: var(--bg); }
+.tool .badge { position: absolute; top: 2px; right: calc(50% - 26px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--ink); color: var(--bg); font-size: 11px; display: grid; place-items: center; padding: 0 4px; }
+.tool .badge.zero { background: var(--line); color: var(--ink-3); }
+
+.pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
+.pad.n6 { grid-template-columns: repeat(6, 1fr); }
+.board.g6 .notes { grid-template-rows: repeat(2, 1fr); font-size: min(3.6vw, 17px); font-size: 30cqh; }
+.no-ar .board.g6 { grid-template-rows: repeat(6, 1fr); }
+/* 首页：9×9 / 6×6 切换 */
+.modesw { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--accent-softer); border: 1px solid var(--line); padding: 4px; border-radius: 14px; margin: -6px 0 16px; }
+.modesw button { height: 46px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--ink-2); line-height: 1.2; }
+.modesw button small { display: block; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.modesw button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+.key { height: 64px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--num); font-size: 32px; color: var(--accent); }
+.key small { font-family: var(--ui); font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+.key:active { background: var(--accent-soft); }
+.key.done { visibility: hidden; }
+.key { -webkit-touch-callout: none; }
+.pad.notes-mode .key { color: var(--accent); font-size: 22px; background: var(--accent-softer); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.pad.notes-mode .key small { color: var(--accent); opacity: .7; }
+
+/* ---------- 弹窗 ---------- */
+.sheet-bg { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgb(0 0 0 / .35); display: none; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet-bg.on { display: flex; }
+.sheet { width: 100%; max-width: 480px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); border-radius: 20px 20px 0 0; padding: 26px 22px calc(env(safe-area-inset-bottom) + 22px); animation: up .22s ease-out; }
+@keyframes up { from { transform: translateY(30px); opacity: 0; } }
+.sheet h2 { margin: 0 0 6px; font-size: 22px; }
+.sheet p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+.win-stars { display: flex; gap: 10px; justify-content: center; margin: 22px 0 14px; color: var(--line); }
+.win-stars svg.f { color: var(--star); }
+#winSheet.on .btns { animation: winBtns .45s step-end; }   /* 通关面板刚弹出时按钮先半透明，表示还不能点 */
+@keyframes winBtns { from { opacity: .45; } }
+.win-grid { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 18px 0 8px; }
+.win-grid b { display: block; font-family: var(--num); font-size: 26px; font-weight: 400; font-variant-numeric: lining-nums; }
+.win-grid span { font-size: 12px; color: var(--ink-3); }
+.win-tip { text-align: center; font-size: 12px !important; color: var(--ink-3) !important; margin-top: 10px !important; }
+.btns { display: flex; gap: 10px; margin-top: 22px; }
+.btn { flex: 1; height: 50px; border-radius: 12px; font-weight: 600; font-size: 16px; background: var(--accent-softer); color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--bg); }
+.btn.danger { color: var(--error); }
+
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.set-row:last-of-type { border-bottom: 0; }
+.set-row b { display: block; font-size: 15px; font-weight: 500; }
+.set-row span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 3px; line-height: 1.5; }
+.switch { flex: none; width: 48px; height: 28px; border-radius: 14px; background: var(--line); position: relative; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
+.switch.on { background: var(--accent); }
+.switch.on::after { transform: translateX(20px); }
+[hidden] { display: none !important; }
+.link-btn { display: block; color: var(--error); font-size: 14px; padding: 16px 0 0; }
+.link-btn.plain { color: var(--accent); }
+
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 28px); transform: translate(-50%, 20px); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 22px; font-size: 14px; opacity: 0; transition: .2s; pointer-events: none; z-index: 20; white-space: nowrap; }
+@media (max-width: 340px) { .toast { white-space: normal; width: max-content; max-width: calc(100vw - 24px); box-sizing: border-box; text-align: center; } }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- 讲解高亮（棋盘通用） ---------- */
+.cell.h-zone { background: var(--accent-softer); }
+.cell.h-pat { background: var(--same); }
+.cell.h-tgt { background: var(--error-soft); box-shadow: inset 0 0 0 2px var(--error); }
+.cell.h-ghost .v { color: var(--accent); opacity: .75; }
+.notes span.k { color: var(--bg); background: var(--accent); border-radius: 30%; }
+.notes span.x { color: var(--error); text-decoration: line-through; font-weight: 700; }
+.cell.fill .v { color: var(--ink); font-weight: 400; }
+.cell.shake { animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+/* ---------- 技巧练习 ---------- */
+.learn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 20px; margin: -18px 0 30px; }
+.learn b { display: block; font-size: 16px; font-weight: 600; }
+.learn span { display: block; font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+.learn svg { flex: none; color: var(--ink-3); }
+.page-title { font-size: 22px; font-weight: 600; margin: 8px 2px 4px; }
+.page-sub { font-size: 13px; color: var(--ink-2); margin: 0 2px 18px; line-height: 1.6; }
+.lesson-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.lcard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 14px 14px 12px; }
+.lcard-head { display: flex; align-items: baseline; gap: 10px; }
+.lcard-num { font-family: var(--num); font-size: 22px; color: var(--accent); width: 24px; text-align: center; flex: none; }
+.lcard-name { font-size: 16px; font-weight: 600; flex: 1; }
+.lcard-tier { font-size: 12px; color: var(--ink-3); }
+.lcard-short { font-size: 13px; color: var(--ink-2); margin: 4px 0 12px 34px; }
+.lcard-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-left: 34px; }
+.lbtn { height: 44px; border-radius: 10px; background: var(--accent-softer); font-size: 13px; font-weight: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3; }
+.lbtn small { font-size: 11px; color: var(--ink-3); font-weight: 400; }
+.lbtn.done { color: var(--accent); }
+.lbtn:active { background: var(--accent-soft); }
+#tboard { width: min(100%, calc(100vh - 360px)); }
+.no-ar #tboard { width: min(calc(100vw - 32px), 480px, calc(100vh - 360px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 360px)); }
+.tpanel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 12px 0 10px;
+  min-height: 92px; max-height: 150px; overflow-y: auto; font-size: 14px; line-height: 1.65; }
+.tpanel .tstep { font-size: 12px; color: var(--ink-3); margin-bottom: 2px; }
+.s-more { display: none; position: sticky; bottom: -10px; margin: 0 -14px -10px; padding: 4px 14px 6px; text-align: right; font-size: 12px; color: var(--ink-3);
+  background: linear-gradient(transparent, var(--surface) 40%); pointer-events: none; }
+.s-more.on { display: block; }
+.sheet .s-more { bottom: calc(-1 * (env(safe-area-inset-bottom) + 22px)); margin: 0 -22px calc(-1 * (env(safe-area-inset-bottom) + 22px)); padding: 10px 22px calc(env(safe-area-inset-bottom) + 12px); font-size: 14px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.sheet-head h2 { margin: 0; }
+.sheet-head .link-btn { display: inline-block; padding: 4px 0 4px 16px; font-size: 16px; }
+.tpanel.ok { border-color: var(--accent); }
+.tpanel.bad { border-color: var(--error); }
+.tctrl { display: flex; gap: 8px; margin-bottom: 10px; }
+.tctrl .btn { height: 44px; font-size: 15px; margin: 0; }
+.btn:disabled { opacity: .4; }
+#tpad .key { height: 56px; }
+#lesson.teach #tpad { display: none; }
+#lesson.teach .tpanel { max-height: none; }
+@media (max-height: 560px) { #lesson.teach .tpanel { max-height: 118px; } }
+
+/* ---------- 讲解型提示面板 ---------- */
+.hpanel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; display: none; justify-content: center;
+  padding: 0 12px calc(env(safe-area-inset-bottom) + 12px); pointer-events: none; }
+.hpanel.on { display: flex; }
+.hpanel-in { pointer-events: auto; width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 16px; box-shadow: 0 6px 24px rgb(0 0 0 / .14); padding: 12px 16px; animation: up .2s ease-out; }
+.hp-step { font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
+.hp-text { font-size: 15px; line-height: 1.65; max-height: 8.3em; overflow-y: auto; }
+.hp-wrap { position: relative; }
+.hp-more { display: none; position: absolute; right: 0; bottom: 0; font-size: 12px; line-height: 1.6; color: var(--ink-3); padding-left: 2.5em;
+  background: linear-gradient(to right, transparent, var(--surface) 2em); pointer-events: none; }
+.hp-more.on { display: block; }
+.hp-btns { display: flex; gap: 8px; margin-top: 10px; }
+.hp-btns .btn { height: 42px; font-size: 15px; }
+.hpanel.tight .hpanel-in { padding-top: 8px; padding-bottom: 8px; }
+.hpanel.tight .hp-btns { margin-top: 6px; }
+.hpanel.tight .hp-btns .btn { height: 46px; }
+.hpanel.tight .hp-step { margin-bottom: 0; }
+@media (max-height: 700px) { #tboard { width: min(100%, calc(100vh - 318px)); } .no-ar #tboard { width: min(calc(100vw - 32px), 480px, calc(100vh - 318px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 318px)); } .tpanel { min-height: 76px; max-height: 110px; margin: 8px 0; font-size: 13px; } #tpad .key { height: 48px; } .tctrl .btn { height: 40px; } }
+@media (max-height: 700px) { .board { width: min(100%, calc(100vh - 262px)); } .bar { height: 44px; margin-bottom: 0; } .stats { padding: 2px 4px 6px; } .key { height: 54px; font-size: 28px; } .tools { margin: 12px 0 8px; } .tool .ic { width: 38px; height: 38px; } }
+.no-ar .board { width: min(calc(100vw - 32px), 480px, calc(100vh - 300px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 300px)); grid-template-rows: repeat(9, 1fr); }
+@media (max-height: 700px) { .no-ar .board { width: min(calc(100vw - 32px), 480px, calc(100vh - 262px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 262px)); } }
+.no-ar .lv { height: calc((min(100vw - 32px, 480px) - 32px) / 5); }
+.old { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 30; background: #EDF0EB; color: #1C2320; display: flex; flex-direction: column; justify-content: center; padding: 32px 24px; line-height: 1.7; font-size: 15px; }
+.old b { font-size: 20px; margin-bottom: 12px; }
+/* ---------- 大字模式（适合老人）：棋盘贴满屏宽、数字几乎占满格子、两排大数字键、文字约 1.5 倍 ---------- */
+:root.large { --ink-2: #333B37; --ink-3: #505A55; --line: #A9B3AB; --line-bold: #161C19; --accent: #1B5242; }
+@media (prefers-color-scheme: dark) {
+  :root.large:not([data-theme="light"]) { --ink-2: #D6DCD8; --ink-3: #B0B9B3; --line: #55605A; --line-bold: #D0D9D3; --accent: #9ADBC1; }
+}
+:root.large[data-theme="dark"] { --ink-2: #D6DCD8; --ink-3: #B0B9B3; --line: #55605A; --line-bold: #D0D9D3; --accent: #9ADBC1; }
+#gNote { display: none; }
+.large body { font-size: 20px; }
+.large .screen { padding-left: 12px; padding-right: 12px; }
+.large #game, .large #lesson { padding-left: 6px; padding-right: 6px; }
+.large .home-head { padding: 22px 2px 18px; }
+.large .home-title { font-size: 56px; }
+.large .home-sub { font-size: 20px; line-height: 1.5; }
+.large .icon-btn { width: 56px; height: 56px; border-radius: 28px; }
+.large .icon-btn svg { width: 32px; height: 32px; }
+.large .continue { padding: 22px; margin-bottom: 24px; }
+.large .continue b { font-size: 25px; }
+.large .continue span { font-size: 19px; opacity: .85; }
+.large .learn { padding: 20px 22px; margin: -10px 0 26px; }
+.large .learn b { font-size: 24px; }
+.large .learn span { font-size: 18px; }
+.large .tier-head { margin-bottom: 14px; }
+.large .tier-name { font-size: 25px; }
+.large .tier-meta { font-size: 18px; }
+.large .levels { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.large .lv { font-size: 40px; gap: 6px; border-width: 2px; border-radius: 16px; }
+.large .lv .st { height: 12px; gap: 5px; }
+.large .lv .st i { width: 12px; height: 12px; }
+.large .lv .bt { font-size: 19px; line-height: 22px; height: 22px; color: var(--ink-2); }
+.large.no-ar .lv { height: calc((min(100vw - 24px, 480px) - 24px) / 3); }
+.large .bar { height: 58px; margin-bottom: 2px; }
+.large .bar-title { font-size: 24px; }
+.large .bar-tier { font-size: 17px; }
+@media (max-width: 340px) { .large .bar-title { font-size: 21px; } .large .bar-tier { font-size: 15px; } }
+@media (max-width: 290px) { .large .bar-title { font-size: 19px; } .large .bar-tier { font-size: 14px; }
+  .large .stats #gNote.many { font-size: 17px; letter-spacing: -.02em; } .large .lv { font-size: 32px; } .large .hpanel .hp-btns .btn { font-size: 18px; } }
+.large .stats { font-size: 19px; padding: 0 6px 4px; min-height: 40px; align-items: center; }
+.large #gNote:empty { display: none; }
+.large #gNote { display: block; line-height: 1.2; font-size: 27px; font-weight: 700; color: var(--accent); letter-spacing: .08em; white-space: nowrap; }
+.large #gNote.many { letter-spacing: 0; font-size: 24px; }
+@media (max-width: 340px) { .large #gNote.many { font-size: 21px; } }
+.large .stats.has-note #gErr { display: none; }
+.large .board { border-width: 3px; width: min(100%, calc(100vh - 384px)); }
+.large .cell.br { border-right-width: 3px; }
+.large .cell.bb { border-bottom-width: 3px; }
+.large .v { font-size: min(8.4vw, 44px); font-size: 84cqh; font-weight: 600; }
+.large .notes { font-size: min(3.3vw, 16px); font-size: 33cqh; color: var(--ink); font-weight: 600; top: 0; right: 0; bottom: 0; left: 0; }
+.large .tools { margin: 8px 0 8px; }
+.large .tool { font-size: 18px; gap: 2px; padding: 4px 0; }
+.large .tool .ic { width: 52px; height: 52px; border-radius: 26px; }
+.large .tool .ic svg { width: 30px; height: 30px; }
+.large .tool .badge { min-width: 26px; height: 26px; border-radius: 13px; font-size: 16px; right: calc(50% - 34px); top: 0; }
+.large .pad { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.large .pad.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@media (max-width: 290px) { .large .pad.n6 { gap: 3px; } .large .pad.n6 .key { font-size: 40px; } }
+.large .board.g6 .notes { font-size: min(4.2vw, 20px); font-size: 38cqh; }
+.large .v, .large .key, .large .lv, .large .win-grid b, .large .lcard-num { font-family: var(--ui); font-weight: 700; font-variant-numeric: tabular-nums; }
+.large .cell.given .v { font-weight: 800; }
+.large .modesw button { height: 62px; font-size: 21px; }
+.large .modesw button small { font-size: 15px; }
+.large .modesw { margin: -4px 0 18px; }
+.large .key { height: 64px; font-size: 50px; font-weight: 600; flex-direction: row; align-items: center; gap: 3px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); }
+.large .key small { font-size: 16px; align-self: flex-end; margin: 0 0 8px; color: var(--ink-3); }
+.large .pad.notes-mode .key { font-size: 38px; }
+.large .hp-step { font-size: 17px; }
+.large .hp-more { font-size: 16px; }
+.large .hp-text { font-size: 22px; line-height: 1.55; max-height: 7.8em; }
+.large .hp-btns .btn { height: 60px; font-size: 21px; }
+.large .sheet h2 { font-size: 28px; }
+.large .sheet p { font-size: 20px; }
+.large .set-row b { font-size: 21px; }
+.large .set-row span { font-size: 17px; }
+.large .set-row { padding: 10px 0; }
+.large .switch { width: 62px; height: 36px; border-radius: 18px; }
+.large .switch::after { width: 30px; height: 30px; }
+.large .switch.on::after { transform: translateX(26px); }
+.large .btn { height: 60px; font-size: 21px; }
+.large .link-btn { font-size: 20px; padding-top: 18px; }
+.large .win-grid b { font-size: 36px; }
+.large .win-grid span, .large .win-tip { font-size: 18px !important; }
+.large .win-stars svg { width: 52px; height: 52px; }
+.large .toast { box-sizing: border-box; font-size: 20px; padding: 14px 22px; border-radius: 28px; white-space: normal; width: max-content; max-width: calc(100vw - 24px); text-align: center; }
+.large .page-sub { font-size: 19px; }
+.large .lcard { padding: 16px; }
+.large .lcard-num { font-size: 30px; width: 32px; }
+.large .lcard-name { font-size: 24px; }
+.large .lcard-tier { font-size: 18px; }
+.large .lcard-short { font-size: 19px; margin: 6px 0 14px; }
+.large .lcard-btns { margin-left: 0; gap: 8px; }
+.lcard-btns .lbtn { white-space: nowrap; }
+@media (max-width: 300px) { .lcard-btns { gap: 4px; } .lcard-btns .lbtn { font-size: 13px; padding-left: 2px; padding-right: 2px; } .large .lcard-btns .lbtn { font-size: 16px; } }
+.large .lbtn { height: 66px; font-size: 20px; }
+.large .lbtn small { font-size: 17px; }
+.large #tboard { width: min(100%, calc(100vh - 448px)); }
+.large .tpanel { font-size: 21px; line-height: 1.55; min-height: 118px; max-height: 190px; margin: 10px 0; }
+.large .tpanel .tstep { font-size: 17px; }
+.large .s-more { font-size: 16px; }
+.large .sheet .s-more { font-size: 18px; }
+.large .sheet-head .link-btn { font-size: 22px; padding-top: 4px; }
+.large .tctrl .btn { height: 58px; font-size: 21px; }
+.large #tpad .key { height: 58px; }
+.large #lesson.teach .tpanel { max-height: 270px; }
+.large.no-ar .board { width: min(calc(100vw - 12px), 480px, calc(100vh - 384px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 384px)); }
+.large.no-ar #tboard { width: min(calc(100vw - 12px), 480px, calc(100vh - 448px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 448px)); }
+@media (min-height: 800px) {
+  .large .key { height: 80px; font-size: 56px; }
+  .large .key small { font-size: 18px; margin-bottom: 10px; }
+  .large .tool .ic { width: 58px; height: 58px; border-radius: 29px; }
+  .large .tools { margin: 12px 0 12px; }
+}
+@media (max-height: 700px) {
+  .large .board { width: min(100%, calc(100vh - 318px)); }
+  .large.no-ar .board { width: min(calc(100vw - 12px), 480px, calc(100vh - 318px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 318px)); }
+  .large .bar { height: 48px; }
+  .large .stats { min-height: 34px; padding-bottom: 2px; }
+  .large #gNote { font-size: 24px; }
+  .large .tools { margin: 4px 0 4px; }
+  .large .tool { font-size: 16px; }
+  .large .tool .ic { width: 42px; height: 42px; }
+  .large .tool .ic svg { width: 26px; height: 26px; }
+  .large .key { height: 52px; font-size: 42px; }
+  .large .key small { margin-bottom: 5px; font-size: 14px; }
+  .large #tboard { width: min(100%, calc(100vh - 372px)); }
+  .large.no-ar #tboard { width: min(calc(100vw - 12px), 480px, calc(100vh - 372px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 372px)); }
+  .large .tpanel { min-height: 88px; max-height: 124px; font-size: 19px; margin: 6px 0; }
+  .large #lesson.teach .tpanel { max-height: 164px; }
+  .large #tpad .key { height: 48px; }
+  .large .tctrl .btn { height: 50px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<section class="screen on" id="home">
+  <div class="wrap">
+    <div class="home-head">
+      <div>
+        <h1 class="home-title">数独</h1>
+        <div class="home-sub" id="homeSub"></div>
+      </div>
+      <button class="icon-btn" id="openSettings" aria-label="设置">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+    <div class="modesw" id="modeSw" role="tablist" aria-label="棋盘大小">
+      <button data-m="9" role="tab">9×9 标准<small>100 关</small></button>
+      <button data-m="6" role="tab">6×6 大格<small>50 关 · 格子更大</small></button>
+    </div>
+    <button class="continue" id="continueBtn"><b id="continueText"></b><span id="continueSub"></span></button>
+    <button class="learn" id="learnBtn"><div><b>技巧练习</b><span id="learnSub"></span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <div id="tiers"></div>
+  </div>
+</section>
+
+<!-- 游戏 -->
+<section class="screen" id="game">
+  <div class="wrap">
+    <div class="bar">
+      <button class="icon-btn" id="backBtn" aria-label="返回">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="bar-mid"><div class="bar-title" id="gTitle"></div><div class="bar-tier" id="gTier"></div></div>
+      <button class="icon-btn" id="openSettings2" aria-label="设置">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--bg)"/><circle cx="15" cy="12" r="2" fill="var(--bg)"/><circle cx="7" cy="18" r="2" fill="var(--bg)"/></svg>
+      </button>
+    </div>
+    <div class="stats" id="gStats"><span id="gNote"></span><span class="err" id="gErr"></span><span id="gTime">00:00</span></div>
+    <div class="board" id="board"></div>
+    <div class="tools">
+      <button class="tool" id="tUndo"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>撤销</button>
+      <button class="tool" id="tErase"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H9L4 15a2 2 0 0 1 0-2.8L13.2 3a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L11 19"/><path d="M8 9l7 7"/></svg></span>擦除</button>
+      <button class="tool" id="tNote"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></span><span id="tNoteLbl">笔记</span></button>
+      <button class="tool" id="tHint"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></span>提示<span class="badge" id="hintBadge">3</span></button>
+    </div>
+    <div class="pad" id="pad"></div>
+  </div>
+</section>
+
+<!-- 技巧练习：课程列表 -->
+<section class="screen" id="tech">
+  <div class="wrap">
+    <div class="bar">
+      <button class="icon-btn" id="techBack" aria-label="返回">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="bar-mid"><div class="bar-title">技巧练习</div></div>
+      <span style="width:44px"></span>
+    </div>
+    <p class="page-sub">按闯关的难度顺序排列。每种方法先看讲解，再做 10 道单步练习（找出一步就算完成），最后用 2 道整题巩固。练习不计入闯关成绩。</p>
+    <div class="lesson-list" id="lessonList"></div>
+  </div>
+</section>
+
+<!-- 技巧练习：讲解和单步练习 -->
+<section class="screen" id="lesson">
+  <div class="wrap">
+    <div class="bar">
+      <button class="icon-btn" id="lessonBack" aria-label="返回">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="bar-mid"><div class="bar-title" id="lTitle"></div><div class="bar-tier" id="lSub"></div></div>
+      <span style="width:44px"></span>
+    </div>
+    <div class="board" id="tboard"></div>
+    <div class="tpanel" id="tPanel"><div class="tstep" id="tStep"></div><div id="tText"></div><div class="s-more" id="tMore">往上滑看全部 ↓</div></div>
+    <div class="tctrl"><button class="btn" id="tBtnA"></button><button class="btn primary" id="tBtnB"></button></div>
+    <div class="pad" id="tpad"></div>
+  </div>
+</section>
+
+<!-- 讲解型提示 -->
+<div class="hpanel" id="hpanel" role="dialog" aria-label="提示">
+  <div class="hpanel-in">
+    <div class="hp-step" id="hpStep"></div>
+    <div class="hp-wrap"><div class="hp-text" id="hpText"></div><div class="hp-more" id="hpMore">往上滑看全部 ↓</div></div>
+    <div class="hp-btns"><button class="btn" id="hpClose">关闭</button><button class="btn" id="hpPrev">上一步</button><button class="btn primary" id="hpNext"></button></div>
+  </div>
+</div>
+<!-- 新难度段提醒 -->
+<div class="hpanel" id="tipPanel" role="dialog" aria-label="难度提醒">
+  <div class="hpanel-in">
+    <div class="hp-step">新的难度</div>
+    <div class="hp-wrap"><div class="hp-text" id="tipText"></div><div class="hp-more" id="tipMore">往上滑看全部 ↓</div></div>
+    <div class="hp-btns"><button class="btn" id="tipClose">直接开始</button><button class="btn primary" id="tipGo">先去学习</button></div>
+  </div>
+</div>
+
+<!-- 通关 -->
+<div class="sheet-bg" id="winSheet">
+  <div class="sheet">
+    <h2 id="winTitle" style="text-align:center"></h2>
+    <div class="win-stars" id="winStars"></div>
+    <div class="win-grid">
+      <div><b id="winTime"></b><span>用时</span></div>
+      <div><b id="winErr"></b><span>错误</span></div>
+      <div><b id="winHint"></b><span id="winHintLabel">提示</span></div>
+    </div>
+    <p class="win-tip" id="winTip"></p>
+    <div class="btns">
+      <button class="btn" id="winHome">返回关卡</button>
+      <button class="btn primary" id="winNext">下一关</button>
+    </div>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div class="sheet-bg" id="setSheet">
+  <div class="sheet" id="setBody">
+    <div class="sheet-head"><h2>设置</h2><button class="link-btn plain" id="setDone">完成</button></div>
+    <div class="set-row"><div><b>大字模式</b><span>字更大、颜色更深、按钮更好按，适合老人。手机系统字体调大时会自动打开。</span></div><button class="switch" data-key="large" aria-label="大字模式"></button></div>
+    <div class="set-row"><div><b>标出错误</b><span>填错立即标红并计入错误次数。关闭后只在填满时检查。</span></div><button class="switch" data-key="showErrors" aria-label="标出错误"></button></div>
+    <div class="set-row"><div><b>自动清理笔记</b><span>填入数字后，删掉同行、同列、同宫笔记里的这个数字。</span></div><button class="switch" data-key="autoClean" aria-label="自动清理笔记"></button></div>
+    <div class="set-row"><div><b>高亮相同数字</b><span>选中格子时，标出盘面上所有相同的数字和笔记。</span></div><button class="switch" data-key="highlightSame" aria-label="高亮相同数字"></button></div>
+    <div class="set-row"><div><b>显示计时</b><span>关掉后不显示计时，关卡列表上也不显示最快用时。计时从第一次点格子开始。</span></div><button class="switch" data-key="showTimer" aria-label="显示计时"></button></div>
+    <button class="link-btn plain" id="restartBtn">重新开始这一关</button>
+    <button class="link-btn" id="resetBtn">清除全部进度</button>
+    <div class="btns"><button class="btn primary" id="setClose">完成</button></div>
+    <div class="s-more" id="setMore">往上滑还有更多 ↓</div>
+  </div>
+</div>
+
+<!-- 确认 -->
+<div class="sheet-bg" id="confirmSheet">
+  <div class="sheet">
+    <h2 id="cfTitle"></h2>
+    <p id="cfText"></p>
+    <div class="btns"><button class="btn" id="cfNo">取消</button><button class="btn primary" id="cfYes"></button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var ok = window.CSS && CSS.supports && CSS.supports("width", "min(1px, 2px)") && CSS.supports("--a", "0") && Array.prototype.includes;
+  if (!ok) {
+    document.addEventListener("DOMContentLoaded", function () {
+      var d = document.createElement("div"); d.className = "old";
+      d.innerHTML = "<b>需要更新系统组件</b>这台手机的系统浏览器组件（Android System WebView）版本太旧，游戏无法正常显示。请在应用商店搜索并更新“Android System WebView”或“Chrome”，然后重新打开数独。";
+      document.body.appendChild(d);
+    });
+  }
+  if (window.CSS && CSS.supports && !CSS.supports("aspect-ratio", "1")) document.documentElement.classList.add("no-ar");
+})();
+</script>
+<script>
+/*ENGINE*/
+</script>
+<script>
+const PUZZLES = /*PUZZLES*/;
+const PUZZLES6 = /*PUZZLES6*/;
+const TIERS6 = [
+  { name: "入门", from: 1, to: 12 },
+  { name: "简单", from: 13, to: 25 },
+  { name: "中等", from: 26, to: 38 },
+  { name: "困难", from: 39, to: 50 },
+];
+
+const TIERS = [
+  { name: "入门", from: 1, to: 20 },
+  { name: "简单", from: 21, to: 45 },
+  { name: "中等", from: 46, to: 70 },
+  { name: "困难", from: 71, to: 90 },
+  { name: "专家", from: 91, to: 100 },
+];
+const HINTS_PER_LEVEL = 3; // 评星：不用提示 3 星，用 1 次 2 星，用 2 次及以上 1 星
+const tierOf = (n, tiers) => (tiers || M().tiers).find(t => n >= t.from && n <= t.to);
+
+// ---------- 存储 ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("sudoku." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("sudoku." + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem("sudoku." + k); } catch (e) {} },
+};
+const isObj = v => v && typeof v === "object" && !Array.isArray(v);
+const settings = { showErrors: true, autoClean: true, highlightSame: true, showTimer: true, large: false };
+{ const s = store.get("settings", {}); if (isObj(s)) for (const k in settings) if (typeof s[k] === "boolean") settings[k] = s[k];
+  // 第一次打开时：手机系统字体调大了（安卓把字体缩放比例放在网址 #fs= 里），就自动打开大字模式
+  const m = /fs=([\d.]+)/.exec(location.hash || "");
+  if (!settings.large && !store.get("largeTouched", false) && m && parseFloat(m[1]) >= 1.15) { settings.large = true; store.set("settings", settings); }
+}
+const applyLarge = () => document.documentElement.classList.toggle("large", !!settings.large);
+applyLarge();
+function loadProgress(key, count) {
+  const p = store.get(key, null), out = { stars: {}, best: {} };
+  if (!isObj(p)) return out;
+  for (let n = 1; n <= count; n++) {
+    const s = isObj(p.stars) ? p.stars[n] : undefined, b = isObj(p.best) ? p.best[n] : undefined;
+    if (s === 1 || s === 2 || s === 3) out.stars[n] = s;
+    if (out.stars[n] && Number.isFinite(b) && b >= 0) out.best[n] = b;
+  }
+  return out;
+}
+// 9×9 和 6×6 各有一套进度；首页当前选中的那一套就是 progress
+let HM = store.get("homeMode", 9) === 6 ? 6 : 9;
+const PROG = { 9: loadProgress("progress", PUZZLES.length), 6: loadProgress("progress6", PUZZLES6.length) };
+let progress = PROG[HM];
+const LESSON_DATA = /*LESSONS*/;
+function loadPractice() {
+  const p = store.get("practice", null), out = { seen: {}, drills: {}, full: {} };
+  SE.LESSONS.forEach(L => {
+    out.drills[L.id] = {}; out.full[L.id] = {};
+    if (!isObj(p)) return;
+    if (isObj(p.seen) && p.seen[L.id] === true) out.seen[L.id] = true;
+    const d = isObj(p.drills) && isObj(p.drills[L.id]) ? p.drills[L.id] : {};
+    for (let k = 0; k < 10; k++) if (d[k] === 1 || d[k] === 2) out.drills[L.id][k] = d[k];
+    const f = isObj(p.full) && isObj(p.full[L.id]) ? p.full[L.id] : {};
+    for (let k = 0; k < 2; k++) if (f[k] === 1) out.full[L.id][k] = 1;
+  });
+  return out;
+}
+let practice = loadPractice();
+const savePractice = () => store.set("practice", practice);
+const intIn = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+function loadGame(n) { return loadGameFrom(M().key + n, M().puzzles[n - 1], M().geo); }
+function loadGameFrom(key, P, geo) {
+  geo = geo || GEO9;
+  const g = store.get(key, null);
+  if (!isObj(g) || (g.p && g.p !== P.p)) return null;
+  if (Array.isArray(g.val) && g.val.join("") === P.s) return null;   // 已经全部填对：当作新的一局
+  if (!Array.isArray(g.val) || g.val.length !== geo.NN || !Array.isArray(g.notes) || g.notes.length !== geo.NN) return null;
+  for (let i = 0; i < geo.NN; i++) {
+    if (!intIn(g.val[i], 0, geo.N) || !intIn(g.notes[i], 0, geo.FULL)) return null;
+    if (+P.p[i] && g.val[i] !== +P.p[i]) return null;
+  }
+  return { val: g.val, notes: g.notes,
+    mistakes: intIn(g.mistakes, 0, 1e6) ? g.mistakes : 0,
+    hints: intIn(g.hints, 0, HINTS_PER_LEVEL) ? g.hints : 0,
+    time: intIn(g.time, 0, 1e8) ? g.time : 0,
+    hsig: typeof g.hsig === "string" ? g.hsig : "" };
+}
+const maxCleared = () => Object.keys(progress.stars).reduce((m, k) => Math.max(m, +k), 0);
+const unlocked = n => n <= maxCleared() + 1;
+
+// ---------- 几何 ----------
+const ROW = i => Math.floor(i / 9), COL = i => i % 9, BOX = i => Math.floor(i / 27) * 3 + Math.floor((i % 9) / 3);
+const PEERS = [...Array(81)].map((_, i) => [...Array(81).keys()].filter(j => j !== i && (ROW(j) === ROW(i) || COL(j) === COL(i) || BOX(j) === BOX(i))));
+// 闯关棋盘的几何：9×9（宫 3×3）或 6×6（宫 2 行 × 3 列）。技巧练习固定用上面的 9×9。
+function makeGeo(N, BR, BC) {
+  const NN = N * N, R = i => Math.floor(i / N), C = i => i % N, B = i => Math.floor(R(i) / BR) * (N / BC) + Math.floor(C(i) / BC);
+  const P = [...Array(NN)].map((_, i) => [...Array(NN).keys()].filter(j => j !== i && (R(j) === R(i) || C(j) === C(i) || B(j) === B(i))));
+  return { N, NN, BR, BC, R, C, B, PEERS: P, FULL: (1 << N) - 1, digits: [...Array(N)].map((_, k) => k + 1) };
+}
+const GEO9 = makeGeo(9, 3, 3), GEO6 = makeGeo(6, 2, 3);
+let GM = GEO9;
+const MODES = {
+  9: { id: 9, geo: GEO9, puzzles: PUZZLES, tiers: TIERS, key: "game.", prog: "progress", cur: "current", tips: true, eng: SE, title: "" },
+  6: { id: 6, geo: GEO6, puzzles: PUZZLES6, tiers: TIERS6, key: "game6.", prog: "progress6", cur: "current6", tips: false, eng: SE.six, title: "6×6 · " },
+};
+const M = () => MODES[HM];
+const LEVELS = () => M().puzzles.length;
+
+const $ = id => document.getElementById(id);
+const fmtShort = s => { const m = Math.floor(s / 60), x = s % 60; return m + ":" + (x < 10 ? "0" : "") + x; };
+const fmt = s => { const m = Math.floor(s / 60), x = s % 60; return (m < 10 ? "0" : "") + m + ":" + (x < 10 ? "0" : "") + x; };
+const starSvg = (f, size = 40) => `<svg class="${f ? "f" : ""}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z"/></svg>`;
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 1800);
+}
+let homeY = 0;   // 首页的滚动位置：从关卡回来时回到原处，不用重新往下找
+function show(id) {
+  if ($("home").classList.contains("on") && id !== "home") homeY = window.scrollY;
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  window.scrollTo(0, id === "home" ? homeY : 0);
+}
+function lockScroll() { document.documentElement.classList.toggle("lock", !!document.querySelector(".sheet-bg.on")); }
+function openSheet(id) { $(id).classList.add("on"); lockScroll(); if (id === "setSheet") { $("setBody").scrollTop = 0; scrollCue($("setBody"), $("setMore")); } }
+// 内容比框高、还没滑到底时，显示“往上滑”提示
+function scrollCue(box, cue) {
+  cue.classList.remove("on");
+  if (box.scrollHeight > box.clientHeight + 2 && box.scrollTop + box.clientHeight < box.scrollHeight - 2) cue.classList.add("on");
+}
+function closeSheet(id) { $(id).classList.remove("on"); lockScroll(); }
+function confirmBox(title, text, yes, fn) {
+  $("cfTitle").textContent = title; $("cfText").textContent = text; $("cfYes").textContent = yes;
+  $("cfYes").onclick = () => { closeSheet("confirmSheet"); fn(); };
+  openSheet("confirmSheet");
+}
+$("cfNo").onclick = () => closeSheet("confirmSheet");
+
+// ---------- 首页 ----------
+function renderHome() {
+  const cleared = Object.keys(progress.stars).length;
+  const stars = Object.values(progress.stars).reduce((a, b) => a + b, 0);
+  $("homeSub").textContent = cleared ? `已通关 ${cleared} / ${LEVELS()}　获得 ${stars} 颗星` : `${LEVELS()} 关，从易到难`;
+  document.querySelectorAll("#modeSw button").forEach(b => { b.classList.toggle("on", +b.dataset.m === HM); b.setAttribute("aria-selected", +b.dataset.m === HM); });
+  const next = Math.min(maxCleared() + 1, LEVELS());
+  const saved = loadGame(next);
+  $("continueText").textContent = cleared === 0 && !saved ? "开始第 1 关" : (saved ? `继续第 ${next} 关` : `开始第 ${next} 关`);
+  $("continueSub").textContent = tierOf(next).name;
+  if (maxCleared() >= LEVELS() && !saved) { $("continueText").textContent = "已全部通关"; $("continueSub").textContent = "点任意关卡重玩"; }
+  $("continueBtn").onclick = () => startLevel(next);
+  const pd = SE.LESSONS.reduce((a, L) => a + Object.values(practice.drills[L.id]).filter(v => v === 1).length + Object.keys(practice.full[L.id]).length, 0);
+  $("learnSub").textContent = (HM === 6 ? "9×9 · " : "") + (pd ? `已完成 ${pd} / 120 道练习` : (HM === 6 ? "10 种方法，讲解加练习" : "10 种解题方法，讲解加练习"));
+
+  $("tiers").innerHTML = M().tiers.map(t => {
+    const got = [...Array(t.to - t.from + 1)].reduce((a, _, k) => a + (progress.stars[t.from + k] ? 1 : 0), 0);
+    let cells = "";
+    for (let n = t.from; n <= t.to; n++) {
+      const s = progress.stars[n] || 0, lock = !unlocked(n), cur = n === maxCleared() + 1;
+      const bt = s && settings.showTimer && progress.best[n] != null ? fmtShort(progress.best[n]) : "";
+      cells += `<button class="lv${lock ? " locked" : ""}${cur ? " cur" : ""}" data-n="${n}" ${lock ? 'aria-disabled="true"' : ""} aria-label="第 ${n} 关${bt ? "，最快 " + bt : ""}">${n}<span class="st">${[1, 2, 3].map(k => `<i class="${k <= s ? "f" : ""}"></i>`).join("")}</span><span class="bt">${bt}</span></button>`;
+    }
+    return `<div class="tier"><div class="tier-head"><span class="tier-name">${t.name}</span><span class="tier-meta">第 ${t.from}–${t.to} 关　${got}/${t.to - t.from + 1}</span></div><div class="levels">${cells}</div></div>`;
+  }).join("");
+}
+$("modeSw").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const m = +b.dataset.m; if (m === HM) return;
+  HM = m; store.set("homeMode", m); progress = PROG[m]; renderHome();
+});
+$("tiers").addEventListener("click", e => {
+  const b = e.target.closest(".lv"); if (!b) return;
+  const n = +b.dataset.n;
+  if (!unlocked(n)) { toast(`先通过第 ${maxCleared() + 1} 关`); return; }
+  startLevel(n);
+});
+
+// ---------- 棋盘 ----------
+const board = $("board"), cells = [], pad = $("pad");
+function setGeo(geo) {
+  if (GM === geo && cells.length === geo.NN) return;
+  GM = geo; cells.length = 0; board.innerHTML = ""; pad.innerHTML = "";
+  const N = geo.N;
+  for (let i = 0; i < geo.NN; i++) {
+    const c = document.createElement("div"), r = geo.R(i), q = geo.C(i);
+    c.className = "cell" + ((q + 1) % geo.BC === 0 && q < N - 1 ? " br" : "") + ((r + 1) % geo.BR === 0 && r < N - 1 ? " bb" : "")
+      + (q === N - 1 ? " lastc" : "") + (r === N - 1 ? " lastr" : "");
+    c.innerHTML = `<span class="v"></span><div class="notes">${"<span></span>".repeat(N)}</div>`;
+    c.dataset.i = i;
+    board.appendChild(c); cells.push(c);
+  }
+  board.style.gridTemplateColumns = board.style.gridTemplateRows = `repeat(${N}, 1fr)`;
+  board.classList.toggle("g6", N === 6);
+  for (let d = 1; d <= N; d++) {
+    const k = document.createElement("button");
+    k.className = "key"; k.dataset.d = d; k.innerHTML = `${d}<small></small>`; k.setAttribute("aria-label", "数字 " + d);
+    pad.appendChild(k);
+  }
+  pad.classList.toggle("n6", N === 6);
+}
+setGeo(GEO9);
+
+let G = null, sel = -1, timer = null, paused = false;
+
+function startLevel(n) {
+  const P = M().puzzles[n - 1];
+  setGeo(M().geo);
+  const given = [...P.p].map(Number), sol = [...P.s].map(Number);
+  const saved = loadGame(n);
+  store.set(M().cur, n);
+  G = {
+    n, m: HM, given, sol,
+    val: saved ? saved.val : given.slice(),
+    notes: saved ? saved.notes : Array(GM.NN).fill(0),
+    mistakes: saved ? saved.mistakes : 0,
+    hints: saved ? saved.hints : 0,
+    time: saved ? saved.time : 0, hsig: saved ? saved.hsig : "",
+    history: [], noteMode: false, done: false, started: false,
+  };
+  sel = -1; H = null; HC = null;
+  store.del("curPractice");
+  $("gTitle").textContent = `${M().title}第 ${n} 关`;
+  $("gTier").textContent = tierOf(n).name;
+  show("game");
+  render(); renderHint();
+  startTimer();
+  hideTip();
+  if (M().tips && TIER_TIPS[n] && !progress.stars[n] && !store.get("tip." + n, false)) { store.set("tip." + n, true); showTip(TIER_TIPS[n]); }
+}
+function startPractice(k, j) {
+  const F = LESSON_DATA[k].full[j], P = { p: F.p, s: F.s };
+  const given = [...P.p].map(Number), sol = [...P.s].map(Number);
+  setGeo(GEO9);
+  const saved = loadGameFrom(`pgame.${k}.${j}`, P, GEO9);
+  store.del(M().cur); store.set("curPractice", [k, j]);
+  G = {
+    n: 0, m: 9, practice: { k, j, P }, given, sol,
+    val: saved ? saved.val : given.slice(),
+    notes: saved ? saved.notes : Array(81).fill(0),
+    mistakes: saved ? saved.mistakes : 0, hints: 0,
+    time: saved ? saved.time : 0,
+    history: [], noteMode: false, done: false, started: false,
+  };
+  sel = -1; H = null; HC = null;
+  $("gTitle").textContent = `整题 ${j + 1} · ${SE.LESSONS[k].name}`;   // 窄屏省略时先保住“整题几”
+  $("gTier").textContent = "技巧练习 · 不限提示";
+  show("game"); hideTip();
+  render(); renderHint();
+  startTimer();
+}
+
+const gameKey = () => G.practice ? `pgame.${G.practice.k}.${G.practice.j}` : MODES[G.m].key + G.n;
+function save() {
+  if (!G || G.done) return;
+  const blank = !G.time && !G.mistakes && !G.hints && G.val.every((v, i) => v === G.given[i]) && G.notes.every(x => !x);
+  if (blank) { store.del(gameKey()); return; }   // 什么都没做：不留存档
+  store.set(gameKey(), { p: G.practice ? G.practice.P.p : MODES[G.m].puzzles[G.n - 1].p, val: G.val, notes: G.notes, mistakes: G.mistakes, hints: G.hints, time: G.time, hsig: G.hsig || "" });
+}
+function startTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    if (!G || G.done || !G.started || paused || document.hidden || !$("game").classList.contains("on")) return;
+    if (document.querySelector(".sheet-bg.on")) return;
+    G.time++; $("gTime").textContent = fmt(G.time);
+    if (G.time % 5 === 0) save();
+  }, 1000);
+}
+
+const isWrong = i => G.val[i] && !G.given[i] && G.val[i] !== G.sol[i];
+
+function frameSets(f) {
+  const o = { zone: new Set(f ? f.zone : []), pat: new Set(f ? f.pat : []), tgt: new Set(f ? f.tgt : []), strike: {}, mark: {} };
+  if (f) { f.strike.forEach(([c, d]) => { o.strike[c] = (o.strike[c] || 0) | (1 << (d - 1)); });
+           f.mark.forEach(([c, d]) => { o.mark[c] = (o.mark[c] || 0) | (1 << (d - 1)); }); }
+  return o;
+}
+function render() {
+  const sv = sel >= 0 ? G.val[sel] : 0;
+  const hf = H && H.open ? H.list[H.i] : null, F = frameSets(hf && hf.f);
+  for (let i = 0; i < GM.NN; i++) {
+    const c = cells[i], v = G.val[i];
+    const ghost = hf && hf.f.place && hf.f.place[0] === i && (!v || isWrong(i)) ? hf.f.place[1] : 0;
+    c.querySelector(".v").textContent = ghost || v || "";
+    // 讲解涉及的空格：临时显示推理用到的候选数
+    const useHintCand = hf && !v && (F.pat.has(i) || F.tgt.has(i) || F.strike[i] || F.mark[i]);
+    const ns = c.querySelector(".notes"); ns.style.display = (v || ghost) ? "none" : "";
+    const m = useHintCand ? hf.cand[i] : G.notes[i];
+    ns.childNodes.forEach((s, k) => {
+      const on = !v && (m >> k) & 1;
+      s.textContent = on ? k + 1 : "";
+      s.classList.toggle("hi", !!(on && !hf && settings.highlightSame && sv === k + 1));
+      s.classList.toggle("k", !!(on && hf && (F.mark[i] >> k) & 1 && !((F.strike[i] >> k) & 1)));
+      s.classList.toggle("x", !!(on && hf && (F.strike[i] >> k) & 1));
+    });
+    c.classList.toggle("h-zone", F.zone.has(i));
+    c.classList.toggle("h-pat", F.pat.has(i));
+    c.classList.toggle("h-tgt", F.tgt.has(i));
+    c.classList.toggle("h-ghost", !!ghost);
+    const zone = sel >= 0 && i !== sel && (GM.R(i) === GM.R(sel) || GM.C(i) === GM.C(sel) || GM.B(i) === GM.B(sel));
+    c.classList.toggle("given", !!G.given[i]);
+    c.classList.toggle("user", !G.given[i] && !!v);
+    c.classList.toggle("wrong", settings.showErrors && isWrong(i));
+    c.classList.toggle("sel", i === sel);
+    c.classList.toggle("zone", zone);
+    c.classList.toggle("same", settings.highlightSame && sv > 0 && v === sv && i !== sel);
+  }
+  // 数字键剩余
+  const cnt = Array(10).fill(0);
+  for (let i = 0; i < GM.NN; i++) if (G.val[i] && (!settings.showErrors || !isWrong(i))) cnt[G.val[i]]++;
+  pad.childNodes.forEach(k => {
+    const d = +k.dataset.d, left = GM.N - cnt[d];
+    k.classList.toggle("done", left <= 0);
+    k.querySelector("small").textContent = left > 0 ? left : "";
+  });
+  pad.classList.toggle("notes-mode", G.noteMode);
+  $("tNote").classList.toggle("on", G.noteMode);
+  $("tNoteLbl").textContent = G.noteMode ? "笔记 开" : "笔记";
+  $("tUndo").disabled = G.history.length === 0;
+  const hl = HINTS_PER_LEVEL - G.hints;
+  $("hintBadge").textContent = hl; $("hintBadge").classList.toggle("zero", hl <= 0);
+  $("hintBadge").style.display = G.practice ? "none" : "";
+  $("gErr").textContent = settings.showErrors ? `错误 ${G.mistakes}` : "";
+  // 选中空格的笔记用大字显示（大字模式下才显示）
+  const nm = sel >= 0 && !G.val[sel] ? G.notes[sel] : 0;
+  const nd = GM.digits.filter(d => (nm >> (d - 1)) & 1);
+  $("gNote").textContent = nm ? "笔记 " + nd.join(" ") : "";
+  $("gNote").classList.toggle("many", nd.length >= 7);
+  $("gStats").classList.toggle("has-note", !!nm);
+  $("gErr").classList.toggle("has", G.mistakes > 0);
+  $("gTime").textContent = fmt(G.time);
+  $("gTime").style.visibility = settings.showTimer ? "" : "hidden";
+}
+
+function snapshot() {
+  G.history.push({ val: G.val.slice(), notes: G.notes.slice(), sel, mistakes: G.mistakes });
+  if (G.history.length > 300) G.history.shift();
+}
+
+function input(d) {
+  if (!G || G.done) return;
+  closeHintPanel();
+  if (sel < 0) { toast("先选一个格子"); return; }
+  const i = sel;
+  if (G.given[i]) { toast("这是题目给的数字，不能改"); return; }
+  if (G.noteMode) {
+    if (G.val[i]) { toast("这一格已经填了数字"); return; }
+    snapshot();
+    G.notes[i] ^= 1 << (d - 1);
+  } else {
+    if (G.val[i] === d) return;
+    if (settings.showErrors && G.val[i] && !isWrong(i)) { toast("这一格已经填对了"); return; }   // 已填对的格子保持不变
+    snapshot();
+    G.val[i] = d; G.notes[i] = 0;
+    // 自动清理笔记：标出错误开着时，填错的数字（已经标红）不去清别的格子的笔记，免得擦掉后笔记变错
+    if (settings.autoClean && !(settings.showErrors && d !== G.sol[i])) GM.PEERS[i].forEach(p => { G.notes[p] &= ~(1 << (d - 1)); });
+    if (d !== G.sol[i] && settings.showErrors) G.mistakes++;
+  }
+  after();
+}
+
+function erase() {
+  if (!G || G.done || sel < 0) return;
+  if (G.given[sel]) { toast("这是题目给的数字，不能改"); return; }
+  closeHintPanel();
+  if (settings.showErrors && G.val[sel] && !isWrong(sel)) { toast("这一格已经填对了"); return; }
+  if (!G.val[sel] && !G.notes[sel]) return;
+  snapshot();
+  if (G.val[sel]) G.val[sel] = 0; else G.notes[sel] = 0;
+  after();
+}
+
+function undo() {
+  const h = G && !G.done && G.history.pop(); if (!h) return;
+  closeHintPanel();
+  G.val = h.val; G.notes = h.notes; sel = h.sel; G.mistakes = h.mistakes;
+  after(false);
+}
+
+
+// 讲解型提示：第一次点先讲推理（高亮 + 文字），一步步看完后再填入。一次完整讲解算用一次提示。
+let H = null;
+let HC = null;   // 等待确认“使用提示”（防止误点）
+function hint() {
+  if (!G || G.done) return;
+  G.started = true; hideTip();
+  const wrongSel = sel >= 0 && isWrong(sel);
+  const sig = G.val.join("");
+  if (!wrongSel && H && H.sig === sig) { HC = null; H.open = true; render(); renderHint(); return; }   // 同一盘面再看一遍，不重复扣次数
+  if (!wrongSel && !G.practice && G.hsig === sig) { runHint(false, true); return; }   // 讲到一半 App 被关掉，重新打开后不重复扣
+  if (!G.practice && G.hints >= HINTS_PER_LEVEL) { toast("这一关的提示用完了"); return; }
+  if (G.practice) { runHint(wrongSel); return; }       // 整题练习不限次数，不用确认
+  if (H) H.open = false;
+  HC = { wrongSel, left: HINTS_PER_LEVEL - G.hints };
+  render(); renderHint();
+}
+function runHint(wrongSel, free) {
+  HC = null;
+  // 选中的格子填错了：直接改正
+  if (wrongSel) {
+    if (G.practice) G.practiceHints = (G.practiceHints || 0) + 1; else G.hints++;
+    H = null; placeHint(sel, G.sol[sel]); toast("这一格填错了，已改成正确的数字"); return;
+  }
+  const sig = G.val.join("");
+  const v = G.val.map((x, i) => (x && !isWrong(i) ? x : 0));
+  const r = (G.practice ? SE : MODES[G.m].eng).hintChain(v);
+  if (G.practice) G.practiceHints = (G.practiceHints || 0) + 1; else if (!free) G.hints++;
+  if (r.stuck || !r.place) {
+    let best = -1, bn = 10;
+    for (let j = 0; j < GM.NN; j++) {
+      if (v[j]) continue;
+      let m = GM.FULL; GM.PEERS[j].forEach(p => { if (v[p]) m &= ~(1 << (v[p] - 1)); });
+      let n = 0; for (let k = 0; k < GM.N; k++) n += (m >> k) & 1;
+      if (n < bn) { bn = n; best = j; }
+    }
+    H = null; if (best >= 0) placeHint(best, G.sol[best]);
+    toast("这一步需要更复杂的推理，直接告诉你答案"); return;
+  }
+  const list = [];
+  r.steps.forEach((st, si) => st.frames.forEach(f => list.push({ f, si, cand: st.cand })));
+  H = { sig, steps: r.steps, list, i: 0, place: r.place, open: true };
+  G.hsig = sig;
+  save(); render(); renderHint();
+}
+function placeHint(i, d) {
+  snapshot();
+  G.val[i] = d; G.notes[i] = 0;
+  if (settings.autoClean) GM.PEERS[i].forEach(p => { G.notes[p] &= ~(1 << (d - 1)); });
+  sel = i; H = null; renderHint();
+  cells[i].classList.remove("flash"); void cells[i].offsetWidth; cells[i].classList.add("flash");
+  after();
+}
+function renderHint() {
+  const p = $("hpanel");
+  if (HC) {
+    $("hpStep").textContent = "提示";
+    $("hpText").textContent = !HC.wrongSel ? `使用 1 次提示？本关还剩 ${HC.left} 次。提示会先讲清楚思路，看完再填入。`
+      : settings.showErrors ? `选中的这一格填错了。用 1 次提示把它改正？本关还剩 ${HC.left} 次。`
+      : `使用 1 次提示，直接给出选中这一格的答案？本关还剩 ${HC.left} 次。`;   // 关掉“标出错误”时不先说它填错了
+    $("hpClose").textContent = "取消"; $("hpPrev").hidden = true;
+    $("hpNext").textContent = "使用提示";
+    p.classList.add("on"); fitHint(); return;
+  }
+  $("hpClose").textContent = "关闭"; $("hpPrev").hidden = false;
+  if (!H || !H.open) { p.classList.remove("on"); return; }
+  const it = H.list[H.i], st = H.steps[it.si];
+  $("hpStep").textContent = (H.steps.length > 1 ? `第 ${it.si + 1} 步，共 ${H.steps.length} 步 · ` : "") + SE.TECH_NAME[st.inst.t];
+  $("hpText").textContent = it.f.text;
+  $("hpPrev").disabled = H.i === 0;
+  const last = H.i === H.list.length - 1;
+  $("hpNext").textContent = last ? `填入 ${H.place[1]}` : "下一步";
+  p.classList.add("on"); fitHint();
+}
+// 小屏手机（特别是大字模式）上讲解文字很长时，面板会盖住棋盘最下面几行：把文字区压矮，改成可以滑动
+function fitHint() { fitPanel($("hpanel"), $("hpText"), $("hpMore")); }
+function fitPanel(p, t, more) {
+  t.style.maxHeight = ""; t.scrollTop = 0; more.classList.remove("on"); p.classList.remove("tight");
+  if (!p.classList.contains("on") || !$("game").classList.contains("on")) return;
+  const over = () => board.getBoundingClientRect().bottom + 4 - p.getBoundingClientRect().top;   // 用外层定位（内层有入场动画位移）
+  const lh = parseFloat(getComputedStyle(t).lineHeight) || 24;
+  const clamp = min => { const o = over(); if (o > 0) t.style.maxHeight = Math.max(min, Math.floor((t.getBoundingClientRect().height - o) / lh)) * lh + "px"; };   // 按整行截，不露半行字
+  clamp(2);
+  if (over() > 0) { p.classList.add("tight"); clamp(1); }   // 还盖得住：按钮和边距再收紧，文字最少留 1 行
+  more.classList.toggle("on", t.scrollHeight > t.clientHeight + 2);
+}
+[["hpText", "hpMore"], ["tipText", "tipMore"]].forEach(([a, b]) => $(a).addEventListener("scroll", () => scrollCue($(a), $(b))));
+const fitTip = () => fitPanel($("tipPanel"), $("tipText"), $("tipMore"));
+window.addEventListener("resize", () => { if ($("hpanel").classList.contains("on")) fitHint(); if ($("tipPanel").classList.contains("on")) fitTip(); });
+function closeHintPanel() {
+  const was = HC || (H && H.open);
+  HC = null; if (H) H.open = false;
+  if (was) { renderHint(); if (G) render(); }
+}
+$("hpClose").onclick = closeHintPanel;
+$("hpPrev").onclick = () => { if (H && H.i > 0) { H.i--; render(); renderHint(); } };
+let hcAt = 0;   // 点“使用提示”的时间：双击时第二下会落在同一位置的“下一步”上
+$("hpNext").onclick = e => {
+  if (HC) { hcAt = performance.now(); runHint(HC.wrongSel); return; }
+  if (e && e.detail && performance.now() - hcAt < 400) return;
+  if (!H) return;
+  if (H.i < H.list.length - 1) { H.i++; render(); renderHint(); }
+  else placeHint(H.place[0], H.place[1]);
+};
+
+// 新难度段提醒
+const TIER_TIPS = {
+  1: "第 1–20 关只用到唯一候选数和宫内排除。第一次玩的话，可以先花一分钟看看这两种方法。",
+  21: "从这一段开始会用到行列排除。",
+  46: "从这一段开始需要区块排除和数对，记得用笔记写下候选数。",
+  71: "这一段会用到三数组和 X-Wing。",
+  91: "最后 10 关每关都要用到 XY-Wing 或 XYZ-Wing 这类“钳子”方法，可以先去技巧练习里看看。",
+};
+// 防双击“穿透”：老人常常双击。第一下点完后界面变了（弹层开关、切屏、按钮换了意思），第二下就会点到同一位置的别的东西上。
+// 规则：真实点击后，落在第一下同一位置（40px 内，或者落在第一下那个点上现在的那个控件上）的下一下，按第一下造成的变化分别拦一段时间：
+//   换了屏幕 750ms；落在第一下之后才弹出来的弹层里 650ms；第一下点的是弹层里的按钮、弹层已关掉 650ms；
+//   技巧练习换了题/进出讲解、或者大字模式切换导致整页重排 650ms；同一个按钮换了意思（“下一步”变成“填入”）400ms。
+// 界面没变时照常（例如连点相邻的数字键、相邻的格子、连点“下一步”“撤销”，或者提示面板开着时连点撤销）。
+// 安卓系统认定“双击”的间隔是 300ms，老人的慢速双击大约到 600ms；再慢的就当作两次有意的点击。
+let LG = 0;   // 布局代数：大字模式开关一次就加一（整页重排，同一位置下面换了控件）
+const viewKey = () => LG + "|" + (typeof T !== "undefined" && T ? [T.mode, T.k, T.j, T.frames ? 1 : 0].join() : "");
+let lastTap = null;
+const tapEl = t => (t && t.closest ? t.closest("button, .lv, .cell, .sheet-bg, .hpanel-in") : null);
+const curScreen = () => { const s = document.querySelector(".screen.on"); return s ? s.id : ""; };
+// 先检查（必须注册在记录之前，否则第二下会先把记录刷新掉）
+["pointerdown", "click"].forEach(ev => document.addEventListener(ev, e => {
+  const L = lastTap; if (!L || !e.isTrusted || (ev === "click" && !e.detail)) return;   // 只管真实的手指点击（键盘回车、程序触发的不管）
+  const dt = performance.now() - L.t; if (dt < 0 || dt > 750) return;
+  const el = tapEl(e.target);
+  const R = L.rect, inR = R && e.clientX >= R.left - 8 && e.clientX <= R.right + 8 && e.clientY >= R.top - 8 && e.clientY <= R.bottom + 8;
+  const near = (Math.abs(e.clientX - L.x) < 40 && Math.abs(e.clientY - L.y) < 40) || inR   // 第一下点的是宽按钮：第二下落在它原来的范围里也算同一位置
+    || (el && el.matches("button, .lv, .cell") && tapEl(document.elementFromPoint(L.x, L.y)) === el);   // 第二下落在第一下那个点上现在的控件上
+  if (!near) return;
+  const now = panelKey().split(","), inP = e.target.closest && e.target.closest(".hpanel.on, .sheet-bg.on");
+  const block = curScreen() !== L.scr
+    || (dt < 650 && inP && L.np.split(",").indexOf(inP.id) < 0)          // 第二下落在刚弹出来的弹层上
+    || (dt < 650 && L.from && now.indexOf(L.from) < 0)                  // 第一下关掉了它所在的弹层，第二下落到了下面
+    || (dt < 650 && viewKey() !== L.vk)                                 // 技巧练习换了题、进出讲解，或大字模式重排了整页
+    || (dt < 400 && el && el === L.el && el.textContent !== L.txt);     // 同一个按钮换了意思
+  if (!block) return;
+  e.stopPropagation(); e.preventDefault();
+}, true));
+const panelKey = () => [...document.querySelectorAll(".hpanel.on, .sheet-bg.on")].map(p => p.id).join();   // 现在开着哪些弹层
+document.addEventListener("click", e => {
+  if (e.defaultPrevented || !e.detail) return;
+  const el = tapEl(e.target);
+  const from = e.target.closest(".hpanel, .sheet-bg"), ctl = el && el.matches("button, .lv") ? el.getBoundingClientRect() : null;
+  lastTap = { x: e.clientX, y: e.clientY, t: performance.now(), el, txt: el ? el.textContent : "", scr: curScreen(), np: panelKey(), from: from ? from.id : "", vk: viewKey(), rect: ctl };
+}, true);
+// 双击关卡块时，第二下会落在刚打开的棋盘上：记住打开关卡的那一下在哪儿，紧跟着在同一位置的点击不关提醒
+let lastDown = null, tipFrom = null;
+document.addEventListener("pointerdown", e => { lastDown = { x: e.clientX, y: e.clientY, t: performance.now(), el: e.target }; }, true);
+function showTip(text) {
+  $("tipText").textContent = text; $("tipPanel").classList.add("on"); fitTip();
+  const el = lastDown && lastDown.el && lastDown.el.closest ? lastDown.el.closest(".lv, #continueBtn, #winNext") : null;   // 只认“打开关卡”的那一下
+  tipFrom = el && performance.now() - lastDown.t < 700 ? lastDown : null;
+  if (tipFrom) lastTap = { x: tipFrom.x, y: tipFrom.y, t: performance.now(), el: null, txt: "", scr: "", np: "-", from: "", vk: "", rect: lastTap && lastTap.t >= tipFrom.t - 50 ? lastTap.rect : null };   // 双击关卡块时第二下什么都不点
+}
+function hideTip() { $("tipPanel").classList.remove("on"); }
+$("tipClose").onclick = hideTip;
+$("tipGo").onclick = () => { hideTip(); goHome(); openTech(); };
+
+function after(check = true) {
+  render(); save();
+  if (!check) return;
+  if (G.val.every((v, i) => v === G.sol[i])) win();
+  else if (G.val.every(v => v)) toast("盘面填满了，但还有错误");
+}
+
+function win() {
+  G.done = true; H = null; HC = null; renderHint();
+  store.del(gameKey());
+  if (G.practice) { store.del("curPractice"); practiceWin(); return; }
+  const MD = MODES[G.m];
+  store.del(MD.cur);
+  const stars = G.hints === 0 ? 3 : G.hints === 1 ? 2 : 1;
+  const first = !progress.stars[G.n];
+  progress.stars[G.n] = Math.max(progress.stars[G.n] || 0, stars);
+  progress.best[G.n] = progress.best[G.n] == null ? G.time : Math.min(progress.best[G.n], G.time);
+  store.set(MD.prog, progress);
+  sel = -1; render();
+  $("winTitle").textContent = G.n === MD.puzzles.length ? `全部 ${MD.puzzles.length} 关完成` : `${MD.title}第 ${G.n} 关完成`;
+  $("winStars").innerHTML = [1, 2, 3].map(k => starSvg(k <= stars)).join("");
+  $("winTime").textContent = fmt(G.time); winGrid();
+  $("winErr").textContent = G.mistakes;
+  $("winHint").textContent = G.hints;
+  $("winTip").textContent = stars < 3 ? (progress.stars[G.n] === 3 ? "这次用了提示，之前的三星成绩保留" : "不用提示通关可得三星")
+    : (first || !settings.showTimer ? "没用提示，三星通关" : `最佳用时 ${fmt(progress.best[G.n])}`);
+  $("winNext").style.display = G.n < MD.puzzles.length ? "" : "none";
+  $("winHome").textContent = "返回关卡"; $("winNext").textContent = "下一关"; $("winHintLabel").textContent = "提示";
+  lastWon = G.n; lastPractice = null;
+  const g = G;
+  setTimeout(() => { if (G === g && $("game").classList.contains("on")) showWin(); }, 350);
+}
+let winAt = 0;
+function showWin() { document.querySelectorAll(".sheet-bg.on").forEach(b => closeSheet(b.id)); openSheet("winSheet"); winAt = performance.now(); }
+const winFresh = e => e && e.detail && performance.now() - winAt < 450;   // 按钮淡入的这段时间不响应
+let lastWon = 0, lastPractice = null;
+// 关掉“显示计时”时，通关面板也不显示用时
+function winGrid() {
+  $("winTime").parentNode.hidden = !settings.showTimer;
+  document.querySelector(".win-grid").style.gridTemplateColumns = `repeat(${settings.showTimer ? 3 : 2}, 1fr)`;
+}
+function practiceWin() {
+  const { k, j } = G.practice, id = SE.LESSONS[k].id;
+  practice.full[id][j] = 1; savePractice();
+  sel = -1; render();
+  $("winTitle").textContent = `整题 ${j + 1} 完成`;
+  $("winStars").innerHTML = "";
+  $("winTime").textContent = fmt(G.time); winGrid();
+  $("winErr").textContent = G.mistakes;
+  $("winHint").textContent = G.practiceHints || 0; $("winHintLabel").textContent = "看提示";
+  $("winTip").textContent = `${SE.LESSONS[k].name}练习`;
+  $("winHome").textContent = "返回练习";
+  $("winNext").textContent = "下一道"; $("winNext").style.display = j < 1 ? "" : "none";
+  lastPractice = { k, j };
+  const g = G;
+  setTimeout(() => { if (G === g && $("game").classList.contains("on")) showWin(); }, 350);
+}
+$("winHome").onclick = e => { if (winFresh(e)) return; closeSheet("winSheet"); goHome(); };
+$("winNext").onclick = e => {
+  if (winFresh(e)) return;
+  closeSheet("winSheet");
+  if (lastPractice) startPractice(lastPractice.k, lastPractice.j + 1);
+  else if (lastWon < LEVELS()) startLevel(lastWon + 1); else goHome();
+};
+
+function goHome() {
+  const wasPractice = G && G.practice;
+  save(); H = null; HC = null; renderHint(); hideTip();
+  if (wasPractice) { store.del("curPractice"); G = null; clearInterval(timer); openTech(); return; }
+  store.del(M().cur); G = null; clearInterval(timer); renderHome(); show("home");
+}
+
+// ---------- 事件 ----------
+function pickCell(e) {
+  const c = e.target.closest && e.target.closest(".cell"); if (!c || !G || G.done) return;
+  if ($("tipPanel").classList.contains("on") && tipFrom && performance.now() - tipFrom.t < 800
+      && Math.abs(e.clientX - tipFrom.x) < 40 && Math.abs(e.clientY - tipFrom.y) < 40) return;   // 双击的第二下：别关掉刚弹出的提醒
+  sel = +c.dataset.i; G.started = true; hideTip(); closeHintPanel(); render();
+}
+if (window.PointerEvent) board.addEventListener("pointerdown", pickCell);
+else { board.addEventListener("touchstart", pickCell, { passive: true }); board.addEventListener("mousedown", pickCell); }
+let LP = null;   // 长按数字键
+function longPress(d) {
+  if (!G || G.done) return;
+  G.noteMode = !G.noteMode; input(d); G.noteMode = !G.noteMode; render();
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+}
+pad.addEventListener("pointerdown", e => {
+  if (LP) clearTimeout(LP.t);
+  LP = null;   // 先清掉上一次的长按记录（比如长按后手指滑出、又切了大字模式），免得下一次点击被当成长按吞掉
+  const k = e.target.closest(".key"); if (!k || settings.large) return;
+  LP = { k, fired: false, t: setTimeout(() => { LP.fired = true; longPress(+k.dataset.d); }, 450) };
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(ev => pad.addEventListener(ev, () => { if (LP) clearTimeout(LP.t); }));
+pad.addEventListener("contextmenu", e => e.preventDefault());
+pad.addEventListener("click", e => {
+  const k = e.target.closest(".key"); if (!k) return;
+  if (LP && LP.fired && LP.k === k) { LP = null; k.blur(); return; }   // 长按已经处理过了
+  LP = null;
+  input(+k.dataset.d); if (e.detail) k.blur();
+});
+$("tUndo").onclick = undo;
+$("tErase").onclick = erase;
+$("tNote").onclick = () => { G.noteMode = !G.noteMode; closeHintPanel(); render(); };
+$("tHint").onclick = hint;
+document.querySelector(".tools").addEventListener("click", e => { const b = e.target.closest(".tool"); if (b && e.detail) b.blur(); });
+$("backBtn").onclick = goHome;
+
+document.addEventListener("keydown", e => {
+  if (T && $("lesson").classList.contains("on") && !document.querySelector(".sheet-bg.on")) { lessonKey(e); return; }
+  if (!G || !$("game").classList.contains("on") || document.querySelector(".sheet-bg.on")) return;
+  if (e.key >= "1" && e.key <= "9") { if (+e.key <= GM.N) input(+e.key); }
+  else if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") erase();
+  else if (e.key === "n" || e.key === "N") { G.noteMode = !G.noteMode; closeHintPanel(); render(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key === "z") undo();
+  else if (e.key.startsWith("Arrow")) {
+    G.started = true; hideTip(); closeHintPanel();
+    if (sel < 0) sel = 0;
+    else {
+      const r = GM.R(sel), c = GM.C(sel), N = GM.N;
+      if (e.key === "ArrowUp") sel = ((r + N - 1) % N) * N + c;
+      if (e.key === "ArrowDown") sel = ((r + 1) % N) * N + c;
+      if (e.key === "ArrowLeft") sel = r * N + (c + N - 1) % N;
+      if (e.key === "ArrowRight") sel = r * N + (c + 1) % N;
+    }
+    render(); e.preventDefault();
+  }
+});
+document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
+
+// 设置
+function renderSettings() { document.querySelectorAll(".switch").forEach(s => s.classList.toggle("on", !!settings[s.dataset.key])); }
+document.querySelectorAll(".switch").forEach(s => s.onclick = () => {
+  settings[s.dataset.key] = !settings[s.dataset.key]; store.set("settings", settings);
+  if (s.dataset.key === "large") { store.set("largeTouched", true); LG++; }   // 亲手开关过大字模式：以后不再自动打开
+  renderSettings(); applyLarge(); scrollCue($("setBody"), $("setMore"));   // 字号变了，设置面板是否需要滑动也变了
+  if (G) { render(); renderHint(); fitTip(); } else renderHome();   // renderHint 会按新字号重新贴合讲解面板
+  if (T && $("lesson").classList.contains("on")) renderT();
+});
+document.querySelectorAll(".set-row").forEach(r => r.addEventListener("click", e => {
+  const sw = r.querySelector(".switch"); if (sw && !e.target.closest(".switch")) sw.click();   // 点标题和说明文字也能开关，老人不用瞄准小开关
+}));
+$("openSettings").onclick = () => { renderSettings(); $("restartBtn").hidden = true; openSheet("setSheet"); };
+$("openSettings2").onclick = () => { renderSettings(); $("restartBtn").hidden = !(G && !G.done); openSheet("setSheet"); };
+$("restartBtn").onclick = () => {
+  closeSheet("setSheet");
+  if (!G || G.done) return;
+  confirmBox("重新开始这一关？", "盘面会恢复成刚开始的样子，用时、错误和提示次数都清零。", "重新开始", () => {
+    if (!G) return;
+    const pr = G.practice, n = G.n;
+    store.del(gameKey()); G.done = true;
+    if (pr) startPractice(pr.k, pr.j); else startLevel(n);
+    toast("已重新开始");
+  });
+};
+$("setClose").onclick = $("setDone").onclick = () => closeSheet("setSheet");
+$("resetBtn").onclick = () => {
+  closeSheet("setSheet");
+  confirmBox("清除全部进度？", "所有关卡的星级、最佳用时、未完成的对局和技巧练习记录都会被删除，无法恢复。", "清除", () => {
+    for (let n = 1; n <= 100; n++) { store.del("game." + n); store.del("tip." + n); store.del("game6." + n); }
+    store.del("current"); store.del("current6");
+    store.del("progress6"); PROG[6] = { stars: {}, best: {} };
+    SE.LESSONS.forEach((L, k) => { store.del(`pgame.${k}.0`); store.del(`pgame.${k}.1`); });
+    store.del("practice"); practice = loadPractice();
+    PROG[9] = { stars: {}, best: {} }; store.set("progress", PROG[9]); progress = PROG[HM];
+    store.del("curPractice");
+    H = null; HC = null; renderHint(); hideTip(); sel = -1;
+    if (G) { G = null; clearInterval(timer); }
+    homeY = 0; renderHome(); show("home"); toast("进度已清除");
+  });
+};
+document.querySelectorAll(".sheet-bg").forEach(bg => bg.addEventListener("click", e => {
+  if (e.target === bg && bg.id !== "winSheet") closeSheet(bg.id);
+}));
+
+// ---------- 技巧练习 ----------
+function openTech() { T = null; renderTech(); show("tech"); }
+function renderTech() {
+  $("lessonList").innerHTML = SE.LESSONS.map((L, k) => {
+    const dn = Object.values(practice.drills[L.id]).filter(v => v === 1).length;
+    const fn = Object.keys(practice.full[L.id]).length;
+    const seen = !!practice.seen[L.id];
+    return `<div class="lcard"><div class="lcard-head"><span class="lcard-num">${k + 1}</span><span class="lcard-name">${L.name}</span><span class="lcard-tier">${L.tier}</span></div>
+      <div class="lcard-short">${L.short}</div>
+      <div class="lcard-btns">
+        <button class="lbtn${seen ? " done" : ""}" data-a="teach" data-l="${k}">讲解<small>${seen ? "已看过" : "未看"}</small></button>
+        <button class="lbtn${dn === 10 ? " done" : ""}" data-a="drill" data-l="${k}">单步练习<small>${dn} / 10</small></button>
+        <button class="lbtn${fn === 2 ? " done" : ""}" data-a="full" data-l="${k}">整题<small>${fn} / 2</small></button>
+      </div></div>`;
+  }).join("");
+}
+$("lessonList").addEventListener("click", e => {
+  const b = e.target.closest(".lbtn"); if (!b) return;
+  const k = +b.dataset.l;
+  if (b.dataset.a === "teach") openTeach(k);
+  else if (b.dataset.a === "drill") openDrill(k);
+  else { const id = SE.LESSONS[k].id; startPractice(k, practice.full[id][0] && !practice.full[id][1] ? 1 : 0); }
+});
+$("learnBtn").onclick = openTech;
+$("techBack").onclick = () => { renderHome(); show("home"); };
+$("lessonBack").onclick = () => lessonBack();
+
+const tboard = $("tboard"), tcells = [];
+for (let i = 0; i < 81; i++) {
+  const c = document.createElement("div");
+  c.className = "cell" + (COL(i) === 2 || COL(i) === 5 ? " br" : "") + (ROW(i) === 2 || ROW(i) === 5 ? " bb" : "") + (COL(i) === 8 ? " lastc" : "") + (ROW(i) === 8 ? " lastr" : "");
+  c.innerHTML = `<span class="v"></span><div class="notes">${"<span></span>".repeat(9)}</div>`;
+  c.dataset.i = i; tboard.appendChild(c); tcells.push(c);
+}
+tboard.style.gridTemplateRows = "repeat(9, 1fr)";
+const tpad = $("tpad");
+for (let d = 1; d <= 9; d++) {
+  const k = document.createElement("button");
+  k.className = "key"; k.dataset.d = d; k.textContent = d; k.setAttribute("aria-label", "数字 " + d);
+  tpad.appendChild(k);
+}
+const decC = s => { const o = []; for (let i = 0; i < 81; i++) o.push(parseInt(s.substr(i * 2, 2), 36)); return o; };
+const stateFrom = D => ({ given: [...D.p].map(Number), val: [...D.v].map(Number), cand: decC(D.c), removed: Array(81).fill(0), placed: Array(81).fill(0) });
+const lessonInsts = (k, st) => [].concat(...SE.LESSONS[k].techs.map(t => SE.find(t, st.val, st.cand)));
+const introFrame = text => ({ text, zone: [], pat: [], tgt: [], place: null, strike: [], mark: [], intro: true });
+
+let T = null;
+function openTeach(k) {
+  const L = SE.LESSONS[k], st = stateFrom(LESSON_DATA[k].demo);
+  const inst = lessonInsts(k, st)[0];
+  const frames = [introFrame(L.intro)].concat(SE.describe(inst, st.val, st.cand, { basic: L.kind === "place" }));
+  T = { mode: "teach", k, st, frames, fi: 0, sel: -1 };
+  practice.seen[L.id] = true; savePractice();
+  show("lesson"); renderT();
+}
+function openDrill(k, j) {
+  const L = SE.LESSONS[k], done = practice.drills[L.id];
+  if (j == null) { j = 0; for (let x = 0; x < 10; x++) if (done[x] !== 1) { j = x; break; } }
+  const st = stateFrom(LESSON_DATA[k].drills[j]);
+  T = { mode: "drill", k, j, st, v0: st.val.slice(), insts: lessonInsts(k, st), frames: null, fi: 0, sel: -1, solved: false, msg: L.task, cls: "", shake: -1 };
+  drillAt = performance.now();
+  show("lesson"); renderT();
+}
+function lessonBack() {
+  if (T && T.mode === "drill" && T.frames) { T.frames = null; renderT(); return; }
+  openTech();
+}
+function renderT() {
+  const L = SE.LESSONS[T.k], st = T.st, notesOn = L.kind === "elim";
+  const f = T.frames ? T.frames[T.fi] : null, F = frameSets(f && !f.intro ? f : null);
+  $("lTitle").textContent = L.name;
+  $("lSub").textContent = T.mode === "teach" ? "讲解" : `单步练习 ${T.j + 1} / 10` + (practice.drills[L.id][T.j] === 1 ? " ✓" : "");
+  for (let i = 0; i < 81; i++) {
+    const c = tcells[i];
+    const v = f ? (T.v0 || st.val)[i] : st.val[i];
+    const ghost = f && f.place && f.place[0] === i && !v ? f.place[1] : 0;
+    c.querySelector(".v").textContent = ghost || v || "";
+    const ns = c.querySelector(".notes"); ns.style.display = (v || ghost || !notesOn) ? "none" : "";
+    const m = f ? st.cand[i] : st.cand[i] & ~st.removed[i];
+    ns.childNodes.forEach((s, k) => {
+      const on = notesOn && !v && (m >> k) & 1;
+      s.textContent = on ? k + 1 : "";
+      s.classList.toggle("k", !!(on && (F.mark[i] >> k) & 1 && !((F.strike[i] >> k) & 1)));
+      s.classList.toggle("x", !!(on && (F.strike[i] >> k) & 1));
+      s.classList.remove("hi");
+    });
+    const zone = !f && T.sel >= 0 && i !== T.sel && (ROW(i) === ROW(T.sel) || COL(i) === COL(T.sel) || BOX(i) === BOX(T.sel));
+    c.classList.toggle("given", !!st.given[i]);
+    c.classList.toggle("fill", !st.given[i] && !!v && !st.placed[i]);
+    c.classList.toggle("user", !!st.placed[i] && !f);
+    c.classList.toggle("sel", !f && i === T.sel);
+    c.classList.toggle("zone", zone);
+    c.classList.toggle("h-zone", F.zone.has(i));
+    c.classList.toggle("h-pat", F.pat.has(i));
+    c.classList.toggle("h-tgt", F.tgt.has(i));
+    c.classList.toggle("h-ghost", !!ghost);
+    c.classList.toggle("shake", T.shake === i);
+  }
+  T.shake = -1;
+  const A = $("tBtnA"), B = $("tBtnB");
+  $("tPanel").className = "tpanel" + (!f && T.cls ? " " + T.cls : "");
+  if (f) {
+    $("tStep").textContent = f.intro ? "这种方法是什么" : `第 ${T.fi} 步，共 ${T.frames.length - 1} 步` + (f.tech && L.techs.length > 1 ? " · " + SE.TECH_NAME[f.tech] : "");
+    $("tText").textContent = f.text;
+    A.textContent = "上一步"; A.disabled = T.fi === 0;
+    const last = T.fi === T.frames.length - 1;
+    B.textContent = last ? (T.mode === "teach" ? "开始练习" : "回到题目") : "下一步";
+  } else {
+    const sc = T.mode === "drill" && notesOn && T.sel >= 0 && !st.val[T.sel] ? st.cand[T.sel] & ~st.removed[T.sel] : 0;
+    $("tStep").textContent = T.solved ? "完成" : sc ? "选中的格子 · 候选数 " + [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(d => (sc >> (d - 1)) & 1).join(" ") : "练习";
+    $("tText").textContent = T.msg;
+    A.disabled = false; A.textContent = T.solved ? "看推理" : "看讲解";
+    B.textContent = T.j < 9 ? "下一题" : "完成";
+  }
+  $("lesson").classList.toggle("teach", !!f);
+  $("tPanel").scrollTop = 0; scrollCue($("tPanel"), $("tMore"));
+}
+$("tPanel").addEventListener("scroll", () => scrollCue($("tPanel"), $("tMore")));
+$("setBody").addEventListener("scroll", () => scrollCue($("setBody"), $("setMore")));
+$("tBtnA").onclick = () => {
+  if (!T) return;
+  if (T.frames) { if (T.fi > 0) { T.fi--; renderT(); } return; }
+  // 看讲解：挑和已划掉的候选数最吻合的那一处
+  const st = T.st;
+  let best = T.insts[0], score = -1;
+  T.insts.forEach(x => {
+    const sc = x.place ? (st.placed[x.place[0]] ? 99 : 0) : x.elim.filter(([c, d]) => st.removed[c] & (1 << (d - 1))).length;
+    if (sc > score) { score = sc; best = x; }
+  });
+  const L = SE.LESSONS[T.k];
+  T.frames = [introFrame(L.task)].concat(SE.describe(best, T.v0, st.cand, { basic: L.kind === "place" }));
+  T.frames[0].text = "这一题的推理过程如下，点“下一步”逐步查看。";
+  T.fi = 1;
+  if (!T.solved && practice.drills[L.id][T.j] !== 1) { practice.drills[L.id][T.j] = 2; savePractice(); }
+  renderT();
+};
+let drillAt = 0;   // 刚换到新的一道单步练习：双击“下一题”时第二下不再跳一题
+$("tBtnB").onclick = e => {
+  if (!T) return;
+  if (e && e.detail && !T.frames && performance.now() - drillAt < 600) return;
+  if (T.frames) {
+    if (T.fi < T.frames.length - 1) { T.fi++; renderT(); return; }
+    if (T.mode === "teach") { openDrill(T.k); return; }
+    T.frames = null; renderT(); return;
+  }
+  if (T.j < 9) openDrill(T.k, T.j + 1);
+  else { const id = SE.LESSONS[T.k].id, n = Object.values(practice.drills[id]).filter(v => v === 1).length;
+         openTech(); toast(n === 10 ? "10 道单步练习全部完成" : `完成了 ${n} / 10 道，没做对的可以再练`); }
+};
+function tpick(e) {
+  const c = e.target.closest && e.target.closest(".cell");
+  if (!c || !T || T.mode !== "drill" || T.frames) return;
+  T.sel = +c.dataset.i; renderT();
+}
+if (window.PointerEvent) tboard.addEventListener("pointerdown", tpick);
+else { tboard.addEventListener("touchstart", tpick, { passive: true }); tboard.addEventListener("mousedown", tpick); }
+tpad.addEventListener("click", e => { const k = e.target.closest(".key"); if (k) { tinput(+k.dataset.d); if (e.detail) k.blur(); } });
+function tmsg(text, cls, shake) { T.msg = text; T.cls = cls || ""; T.shake = shake == null ? -1 : shake; renderT(); }
+function tinput(d) {
+  if (!T || T.mode !== "drill" || T.frames) return;
+  const L = SE.LESSONS[T.k], st = T.st, i = T.sel, b = 1 << (d - 1);
+  if (T.solved) { tmsg("这一题已经完成了，点“下一题”继续。", "ok"); return; }
+  if (i < 0) { tmsg("先点一个格子，再点数字。", "bad"); return; }
+  if (st.val[i]) { tmsg("这一格已经有数字了，换一个空格。", "bad", i); return; }
+  if (L.kind === "place") {
+    if (T.insts.some(x => x.place[0] === i && x.place[1] === d)) { st.val[i] = d; st.placed[i] = 1; drillSolved(); return; }
+    if (!(st.cand[i] & b)) {
+      const p = PEERS[i].find(q => st.val[q] === d);
+      tmsg(`这一格不能填 ${d}：${p != null ? `第 ${ROW(p) + 1} 行第 ${COL(p) + 1} 列已经有 ${d} 了，它们在同一` + (ROW(p) === ROW(i) ? "行" : COL(p) === COL(i) ? "列" : "宫") : `同一行、列或宫里已经有 ${d} 了`}。`, "bad", i);
+    } else tmsg(`用“${L.name}”还推不出这一格就是 ${d}，再找找。`, "bad", i);
+    return;
+  }
+  if (st.removed[i] & b) { tmsg(`${d} 已经从这一格划掉了，继续找别的。`, "ok"); return; }   // 双击时第二下别显示成红色报错
+  if (!(st.cand[i] & b)) { tmsg(`这一格的候选数里没有 ${d}。`, "bad", i); return; }
+  if (T.insts.some(x => x.elim.some(([c, dd]) => c === i && dd === d))) {
+    st.removed[i] |= b;
+    if (T.insts.some(x => x.elim.every(([c, dd]) => st.removed[c] & (1 << (dd - 1))))) { drillSolved(); return; }
+    tmsg(`对，${d} 可以从这一格划掉。这一步还能从别的格子划掉候选数，继续找。`, "ok");
+  } else tmsg(`这个候选数用“${L.name}”还划不掉，再找找。`, "bad", i);
+}
+function drillSolved() {
+  const L = SE.LESSONS[T.k];
+  T.solved = true; T.sel = -1;
+  practice.drills[L.id][T.j] = 1; savePractice();
+  tmsg(L.kind === "place" ? "答对了！点“看推理”可以对照完整的思路。" : "答对了，这一步能划掉的都划掉了！点“看推理”可以对照完整的思路。", "ok");
+}
+function lessonKey(e) {
+  if (e.key >= "1" && e.key <= "9") { tinput(+e.key); return; }
+  if (e.key === "ArrowRight" && T.frames) { $("tBtnB").click(); return; }
+  if (e.key === "ArrowLeft" && T.frames) { $("tBtnA").click(); return; }
+  if (e.key.startsWith("Arrow") && T.mode === "drill" && !T.frames) {
+    if (T.sel < 0) T.sel = 0;
+    else { const r = ROW(T.sel), c = COL(T.sel);
+      if (e.key === "ArrowUp") T.sel = ((r + 8) % 9) * 9 + c;
+      if (e.key === "ArrowDown") T.sel = ((r + 1) % 9) * 9 + c;
+      if (e.key === "ArrowLeft") T.sel = r * 9 + (c + 8) % 9;
+      if (e.key === "ArrowRight") T.sel = r * 9 + (c + 1) % 9; }
+    renderT(); e.preventDefault();
+  }
+}
+
+// 安卓返回键：返回 true 表示网页已处理
+window.appPause = function () { paused = true; save(); };
+window.appResume = function () { paused = false; };
+window.handleBack = function () {
+  const open = document.querySelector(".sheet-bg.on");
+  if (open) { if (open.id === "winSheet") { closeSheet("winSheet"); goHome(); } else closeSheet(open.id); return true; }
+  if (HC || (H && H.open)) { closeHintPanel(); return true; }
+  if ($("tipPanel").classList.contains("on")) { hideTip(); return true; }
+  if ($("game").classList.contains("on")) { goHome(); return true; }
+  if ($("lesson").classList.contains("on")) { lessonBack(); return true; }
+  if ($("tech").classList.contains("on")) { renderHome(); show("home"); return true; }
+  return false;
+};
+
+renderHome();
+// 被系统回收或切换深色模式后重新打开时，回到原来的对局
+(() => {
+  const c = store.get(M().cur, null);
+  if (Number.isInteger(c) && c >= 1 && c <= LEVELS() && unlocked(c)) { startLevel(c); return; }
+  const q = store.get("curPractice", null);
+  if (Array.isArray(q) && q.length === 2 && intIn(q[0], 0, LESSON_DATA.length - 1) && intIn(q[1], 0, 1) && LESSON_DATA[q[0]].full[q[1]]) startPractice(q[0], q[1]);
+  else store.del("curPractice");
+})();
+</script>
+</body>
+</html>

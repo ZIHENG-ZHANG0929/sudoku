@@ -35,3 +35,19 @@ google-services.json
 *.hprof
 
 *.jks
+
+# Signing config (never commit)
+keystore.properties
+
+# Build outputs of build.py / make_preview.py
+web/index.html
+android/app/src/main/assets/www/
+preview_full.html
+preview_artifact.html
+
+# Generated / local
+gen/pool.json
+sols.json
+shots/
+__pycache__/
+*.pyc
