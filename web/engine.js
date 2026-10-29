@@ -221,7 +221,7 @@ var SE = (function () {
   var LESSONS = [
     { id: "naked_single", name: "唯一候选数", techs: ["naked_single"], tier: "入门", kind: "place",
       short: "一个格子能填的数只剩一个",
-      intro: "看一个空格所在的行、列和宫。这三处已经出现过的数字，这一格都不能再填。如果 1 到 9 里只剩一个数字没出现过，这一格就只能填它。",
+      intro: "看一个空格所在的行、列和宫（宫是粗线围出来的 3×3 小方块）。这三处已经出现过的数字，这一格都不能再填。如果 1 到 9 里只剩一个数字没出现过，这一格就只能填它。",
       task: "找出一个只剩一个数能填的空格，把数字填进去。" },
     { id: "hidden_single_box", name: "宫内排除", techs: ["hidden_single_box"], tier: "入门", kind: "place",
       short: "某个数在一个宫里只剩一个位置",
@@ -234,31 +234,31 @@ var SE = (function () {
     { id: "box_line", name: "区块排除", techs: ["pointing", "claiming"], tier: "中等", kind: "elim",
       short: "候选数挤在一条线上或一个宫里",
       intro: "从这一课开始要用到笔记（候选数）。如果某个数字在一个宫里的候选位置都在同一行（或同一列），那这个数字在这一行一定落在这个宫里，同一行在宫外的格子就都不能是它。反过来也成立：一行里某个数字的候选都在同一个宫，这个宫里不在这一行的格子就不能是它。",
-      task: "找出可以用区块排除划掉的候选数，在那些格子里点数字把它划掉。" },
+      task: "找出可以用区块排除划掉的候选数，把它们划掉：先点格子，再点数字。" },
     { id: "pair", name: "数对", techs: ["naked_pair", "hidden_pair"], tier: "中等", kind: "elim",
       short: "两个格子锁定两个数",
       intro: "同一行（列、宫）里，如果有两个格子的候选数都只有同样的两个数，比如都是 3 和 7，那 3 和 7 一定分别在这两格里，这一行其他格子都不能再是 3 或 7。这叫显性数对。另一种是隐性数对：两个数字在一行里都只能放在同样的两格，这两格就被它们占住，格子里的其他候选数可以划掉。",
-      task: "找出一个数对，把它能划掉的候选数划掉。" },
+      task: "找出一个数对，把它能划掉的候选数划掉：先点格子，再点数字。" },
     { id: "triple", name: "三数组", techs: ["naked_triple", "hidden_triple"], tier: "困难", kind: "elim",
       short: "三个格子锁定三个数",
       intro: "数对的扩展。同一行（列、宫）里的三个格子，候选数加起来只有三个数字（每格不一定三个都有），这三个数字就一定分布在这三格里，其他格子都不能是它们。隐性三数组则是三个数字在一行里只能放在同样的三格，这三格的其他候选数可以划掉。",
-      task: "找出一个三数组，把它能划掉的候选数划掉。" },
+      task: "找出一个三数组，把它能划掉的候选数划掉：先点格子，再点数字。" },
     { id: "x_wing", name: "X-Wing", techs: ["x_wing"], tier: "困难", kind: "elim",
       short: "两行两列组成的矩形",
       intro: "看某一个数字。如果有两行，这个数字在每一行里都只剩两个候选位置，而且这两行的候选位置正好在同样的两列上，四个格子就组成一个矩形。两行的这个数字要么落在左上和右下，要么落在右上和左下，不管哪种，这两列里的这个数字都被这两行用掉了，所以两列里其他格子都不能是它。行和列换过来也一样。",
-      task: "找出一个 X-Wing，把它能划掉的候选数划掉。" },
+      task: "找出一个 X-Wing，把它能划掉的候选数划掉：先点格子，再点数字。" },
     { id: "xy_wing", name: "XY-Wing", techs: ["xy_wing"], tier: "专家", kind: "elim",
       short: "三个双候选格子连成的钳子",
       intro: "找一个只有两个候选数的格子当枢纽，比如 x 和 y。它能看到的另外两个双候选格子分别是 x、z 和 y、z。枢纽如果是 x，第一个翅膀就只能是 z；枢纽如果是 y，第二个翅膀就只能是 z。总之两个翅膀里至少有一个是 z，所以同时能看到两个翅膀的格子都不能是 z。",
-      task: "找出一个 XY-Wing，把它能划掉的候选数划掉。" },
+      task: "找出一个 XY-Wing，把它能划掉的候选数划掉：先点格子，再点数字。" },
     { id: "xyz_wing", name: "XYZ-Wing", techs: ["xyz_wing"], tier: "专家", kind: "elim",
       short: "XY-Wing 的升级版",
       intro: "和 XY-Wing 很像，只是枢纽有三个候选数 x、y、z，两个翅膀分别是 x、z 和 y、z。枢纽如果是 z 就不用说了；如果是 x 或 y，对应的那个翅膀就只能是 z。所以三格里一定有一个 z，同时能看到枢纽和两个翅膀的格子都不能是 z。",
-      task: "找出一个 XYZ-Wing，把它能划掉的候选数划掉。" },
+      task: "找出一个 XYZ-Wing，把它能划掉的候选数划掉：先点格子，再点数字。" },
     { id: "swordfish", name: "剑鱼", techs: ["swordfish"], tier: "专家", kind: "elim",
       short: "三行三列版本的 X-Wing",
       intro: "X-Wing 的扩展。看某一个数字：如果有三行，这个数字在每一行里的候选位置都落在同样的三列之内（每行两到三个位置），那这三行的三个这个数字正好占掉这三列，三列里其他格子都不能是它。",
-      task: "找出一个剑鱼，把它能划掉的候选数划掉。" },
+      task: "找出一个剑鱼，把它能划掉的候选数划掉：先点格子，再点数字。" },
   ];
   var TECH_LESSON = {};
   LESSONS.forEach(function (l, k) { l.techs.forEach(function (t) { TECH_LESSON[t] = k; }); });
@@ -290,7 +290,7 @@ var SE = (function () {
   function unitCells(u) { return u.kind === "row" ? ROWS[u.i] : u.kind === "col" ? COLS[u.i] : BOXES[u.i]; }
   function elimCells(inst) { return uniq(inst.elim.map(function (e) { return e[0]; })); }
   function elimDigits(inst) { return uniq(inst.elim.map(function (e) { return e[1]; })).sort(); }
-  function F(text, o) { o = o || {}; return { text: text, zone: o.zone || [], pat: o.pat || [], tgt: o.tgt || [], place: o.place || null, strike: o.strike || [], mark: o.mark || [] }; }
+  function F(text, o) { o = o || {}; return { text: text, zone: o.zone || [], pat: o.pat || [], tgt: o.tgt || [], no: o.no || [], place: o.place || null, strike: o.strike || [], mark: o.mark || [] }; }
 
   // ctx.basic: 这一步之前没有做过任何排除（候选数完全由已填数字决定）
   function describe(inst, val, cand, ctx) {
@@ -308,7 +308,7 @@ var SE = (function () {
         fr.push(F("看" + cellName(c) + "这一格。它所在的行、列和宫里已经出现了 " + list(have) + "。", { zone: zone, pat: pat, tgt: [c] }));
         fr.push(F("1 到 " + N + " 里只有 " + d + " 没出现过，所以这一格只能填 " + d + "。", { zone: zone, tgt: [c], place: [c, d] }));
       } else {
-        fr.push(F("前面的排除做完后，" + cellName(c) + "这一格的候选数只剩下 " + d + "，所以它只能填 " + d + "。", { tgt: [c], place: [c, d], mark: [[c, d]] }));
+        fr.push(F((ctx.notes ? "按你记的笔记，" : ctx.notesLater ? "按你记的笔记，再加上前面的排除，" : "前面的排除做完后，") + cellName(c) + "这一格的候选数只剩下 " + d + "，所以它只能填 " + d + "。", { tgt: [c], place: [c, d], mark: [[c, d]] }));
       }
     } else if (t === "hidden_single_box" || t === "hidden_single_line") {
       var c2 = inst.place[0], d2 = inst.place[1], uc = unitCells(inst.unit);
@@ -325,18 +325,21 @@ var SE = (function () {
         fr.forEach(function (f) { f.tech = t; });
         return fr;
       }
+      // 行或列里说“第 6 行里只有第 3 列这一格”，不重复说“第 6 行第 3 列”
+      var inUnit = inst.unit.kind === "row" ? "第 " + (C(c2) + 1) + " 列" : inst.unit.kind === "col" ? "第 " + (R(c2) + 1) + " 行" : cellName(c2);
       fr.push(F("看" + unitName(inst.unit) + "：这里还没有 " + d2 + "，它一定在剩下的空格里。", { zone: uc }));
       if (allByValue) {
-        fr.push(F("高亮的这些 " + d2 + " 所在的行、列、宫会挡住同一条线上的格子，" + unitName(inst.unit) + "里别的空格都放不了 " + d2 + "。", { zone: uc, pat: blockers, tgt: others }));
-        fr.push(F("只剩" + cellName(c2) + "这一格能放 " + d2 + "，所以填 " + d2 + "。", { zone: uc, pat: blockers, tgt: [c2], place: [c2, d2] }));
+        // 放不了的空格用 no（斜线底）标出，不用和答案格一样的目标框
+        fr.push(F((blockers.length > 1 ? "高亮的这几个 " + d2 + "，它们" : "高亮的这个 " + d2 + "，它") + "所在的行、列和宫里都不能再放 " + d2 + "，所以" + unitName(inst.unit) + "里" + (others.length > 1 ? "别的空格都放不了 " : "另一个空格也放不了 ") + d2 + "。", { zone: uc, pat: blockers, no: others }));
+        fr.push(F("只剩" + inUnit + "这一格能放 " + d2 + "，所以填 " + d2 + "。", { zone: uc, pat: blockers, tgt: [c2], place: [c2, d2] }));
       } else {
-        fr.push(F("前面的排除做完后，" + unitName(inst.unit) + "里只有" + cellName(c2) + "这一格还能放 " + d2 + "，所以填 " + d2 + "。", { zone: uc, tgt: [c2], place: [c2, d2] }));
+        fr.push(F((ctx.notes ? "按你记的笔记，" : ctx.notesLater ? "按你记的笔记，再加上前面的排除，" : "前面的排除做完后，") + unitName(inst.unit) + "里只有" + inUnit + "这一格还能放 " + d2 + "，所以填 " + d2 + "。", { zone: uc, tgt: [c2], place: [c2, d2] }));
       }
     } else if (t === "pointing") {
       var bx = unitCells(inst.unit), ln = unitCells(inst.line), dp = inst.digit, ec = elimCells(inst);
       fr.push(F("看" + unitName(inst.unit) + "里的数字 " + dp + "：它只可能出现在高亮的这几格。", { zone: bx, pat: inst.pat, mark: inst.pat.map(function (c) { return [c, dp]; }) }));
       fr.push(F("这几格都在" + unitName(inst.line) + "上。所以不管 " + dp + " 最后落在哪一格，" + unitName(inst.line) + "的 " + dp + " 都在这个宫里。", { zone: ln, pat: inst.pat, mark: inst.pat.map(function (c) { return [c, dp]; }) }));
-      fr.push(F(unitName(inst.line) + "在宫外的这些格子就不能是 " + dp + "，可以把 " + dp + " 划掉。", { zone: ln, pat: inst.pat, tgt: ec, strike: inst.elim }));
+      fr.push(F(unitName(inst.line) + "在宫外的" + (ec.length > 1 ? "这些格子" : "这一格") + "就不能是 " + dp + "，可以把 " + dp + " 划掉。", { zone: ln, pat: inst.pat, tgt: ec, strike: inst.elim }));
     } else if (t === "claiming") {
       var ln2 = unitCells(inst.unit), bx2 = BOXES[inst.box], dc = inst.digit, ec2 = elimCells(inst);
       fr.push(F("看" + unitName(inst.unit) + "里的数字 " + dc + "：它只可能出现在高亮的这几格。", { zone: ln2, pat: inst.pat, mark: inst.pat.map(function (c) { return [c, dc]; }) }));
@@ -346,12 +349,13 @@ var SE = (function () {
       var uc3 = unitCells(inst.unit), n = inst.pat.length, word = ["", "", "两", "三", "四"][n];
       var mk = []; inst.pat.forEach(function (c) { digs(cand[c]).forEach(function (d) { mk.push([c, d]); }); });
       fr.push(F("看" + unitName(inst.unit) + "里高亮的" + word + "格，它们的候选数合起来只有 " + list(inst.digits) + "。", { zone: uc3, pat: inst.pat, mark: mk }));
-      fr.push(F("这" + word + "个数一定分别填在这" + word + "格里，所以" + unitName(inst.unit) + "的其他格子都不能是 " + list(elimDigits(inst)) + "，可以划掉。", { zone: uc3, pat: inst.pat, tgt: elimCells(inst), strike: inst.elim, mark: mk }));
+      var ed = elimDigits(inst);
+      fr.push(F("这" + word + "个数（" + list(inst.digits) + "）一定分别填在这" + word + "格里，所以" + unitName(inst.unit) + "的其他格子都不能是这" + word + "个数" + (ed.length < inst.digits.length ? "，这里能划掉的是 " + list(ed) : "，可以划掉") + "。", { zone: uc3, pat: inst.pat, tgt: elimCells(inst), strike: inst.elim, mark: mk }));
     } else if (/^hidden_(pair|triple|quad)$/.test(t)) {
       var uc4 = unitCells(inst.unit), n2 = inst.pat.length, word2 = ["", "", "两", "三", "四"][n2];
       var mk2 = []; inst.pat.forEach(function (c) { inst.digits.forEach(function (d) { if (cand[c] & bit(d)) mk2.push([c, d]); }); });
       fr.push(F("在" + unitName(inst.unit) + "里，" + list(inst.digits) + " 都只能放在高亮的这" + word2 + "格。", { zone: uc4, pat: inst.pat, mark: mk2 }));
-      fr.push(F("这" + word2 + "格必须留给 " + list(inst.digits) + "，所以格子里的其他候选数（" + list(elimDigits(inst)) + "）都可以划掉。", { zone: uc4, pat: inst.pat, tgt: inst.pat, strike: inst.elim, mark: mk2 }));
+      fr.push(F("这" + word2 + "格必须留给 " + list(inst.digits) + "，所以格子里的其他候选数（" + list(elimDigits(inst)) + "）" + (elimDigits(inst).length > 1 ? "都" : "") + "可以划掉。", { zone: uc4, pat: inst.pat, tgt: inst.pat, strike: inst.elim, mark: mk2 }));
     } else if (t === "x_wing" || t === "swordfish") {
       var dx = inst.digit, word3 = t === "x_wing" ? "两" : "三";
       var baseCells = [].concat.apply([], inst.base.lines.map(function (l) { return (inst.base.kind === "row" ? ROWS : COLS)[l]; }));
@@ -363,14 +367,14 @@ var SE = (function () {
     } else if (t === "xy_wing") {
       var pv = inst.pivot, w = inst.wings, z = inst.digit, x = inst.x, y = inst.y;
       var mk4 = [[pv, x], [pv, y], [w[0], x], [w[0], z], [w[1], y], [w[1], z]];
-      fr.push(F("枢纽：" + cellName(pv) + "只能是 " + x + " 或 " + y + "。它能看到两个只有两个候选数的格子：一个是 " + x + "/" + z + "，一个是 " + y + "/" + z + "。", { pat: [pv, w[0], w[1]], mark: mk4 }));
+      fr.push(F("枢纽：" + cellName(pv) + "只能是 " + Math.min(x, y) + " 或 " + Math.max(x, y) + "。和它同行、同列或同宫的两个格子（翅膀）各只有两个候选数：" + cellName(w[0]) + "是 " + x + "/" + z + "，" + cellName(w[1]) + "是 " + y + "/" + z + "。", { pat: [pv, w[0], w[1]], mark: mk4 }));
       fr.push(F("枢纽是 " + x + " 时，" + x + "/" + z + " 那格只能是 " + z + "；枢纽是 " + y + " 时，" + y + "/" + z + " 那格只能是 " + z + "。总之两个翅膀里至少有一个是 " + z + "。", { pat: [pv, w[0], w[1]], mark: [[w[0], z], [w[1], z]] }));
       fr.push(F("所以同时能看到这两个翅膀的格子都不能是 " + z + "，可以划掉。", { pat: [pv, w[0], w[1]], tgt: elimCells(inst), strike: inst.elim, mark: [[w[0], z], [w[1], z]] }));
     } else if (t === "xyz_wing") {
       var pv2 = inst.pivot, w2 = inst.wings, z2 = inst.digit;
       var pd = digs(cand[pv2]);
       var mk5 = []; [pv2, w2[0], w2[1]].forEach(function (c) { digs(cand[c]).forEach(function (d) { mk5.push([c, d]); }); });
-      fr.push(F("枢纽：" + cellName(pv2) + "的候选数是 " + list(pd) + "。它能看到的两个翅膀分别是 " + digs(cand[w2[0]]).join("/") + " 和 " + digs(cand[w2[1]]).join("/") + "，都含有 " + z2 + "。", { pat: [pv2, w2[0], w2[1]], mark: mk5 }));
+      fr.push(F("枢纽：" + cellName(pv2) + "的候选数是 " + list(pd) + "。和它同行、同列或同宫的两个翅膀：" + cellName(w2[0]) + "是 " + digs(cand[w2[0]]).join("/") + "，" + cellName(w2[1]) + "是 " + digs(cand[w2[1]]).join("/") + "，都含有 " + z2 + "。", { pat: [pv2, w2[0], w2[1]], mark: mk5 }));
       fr.push(F("枢纽如果是 " + z2 + " 就不用说了；如果是另外两个数之一，对应的那个翅膀就只能是 " + z2 + "。所以这三格里一定有一个 " + z2 + "。", { pat: [pv2, w2[0], w2[1]], mark: [[pv2, z2], [w2[0], z2], [w2[1], z2]] }));
       fr.push(F("同时能看到这三格的格子都不能是 " + z2 + "，可以划掉。", { pat: [pv2, w2[0], w2[1]], tgt: elimCells(inst), strike: inst.elim, mark: [[pv2, z2], [w2[0], z2], [w2[1], z2]] }));
     }
@@ -379,25 +383,31 @@ var SE = (function () {
   }
 
   // 讲解型提示：从当前盘面（只看填对的数字）一路推到下一个能填的格子
-  function hintChain(val, maxSteps) {
-    var v = val.slice(), cand = basicCands(v), insts = [];
+  // cand0（可选）：起点的候选数。传入时按玩家自己记的笔记来推理，不会让玩家去划掉笔记里本来就没有的数
+  function startCands(val, cand0) {
+    var b = basicCands(val);
+    if (!cand0) return b;
+    return b.map(function (m, i) { return val[i] ? 0 : (cand0[i] & m) || m; });   // 笔记只能比基础候选数少；空的就当没记
+  }
+  function hintChain(val, maxSteps, cand0, order) {
+    var v = val.slice(), cand = startCands(v, cand0), insts = [];
     for (var k = 0; k < (maxSteps || 40); k++) {
-      var inst = next(v, cand);
-      if (!inst) return { steps: build_(val, insts), stuck: true };
+      var inst = next(v, cand, order);
+      if (!inst) return { steps: build_(val, insts, cand0), stuck: true };
       insts.push(inst);
       if (inst.place) {
-        insts = prune(val, insts);
-        return { steps: build_(val, insts), place: insts[insts.length - 1].place };
+        insts = prune(val, insts, cand0);
+        return { steps: build_(val, insts, cand0), place: insts[insts.length - 1].place };
       }
       apply(inst, v, cand);
     }
-    return { steps: build_(val, insts), stuck: true };
+    return { steps: build_(val, insts, cand0), stuck: true };
   }
   // 同一个“形状”的推理（同一技巧、同样的格子和数字），用来判断去掉别的步骤后它还成不成立
   function sig(x) { return JSON.stringify([x.t, x.digit, x.unit, x.line, x.box, x.base, x.cover, x.pivot, x.wings, x.digits, x.pat, x.place]); }
   // 按顺序重放这些排除，每一步都必须在当时的盘面上仍然成立；成立就返回重放后的实例（划掉的候选数按当时实际情况），否则返回 null
-  function replay(val, list) {
-    var v = val.slice(), cand = basicCands(v), out = [];
+  function replay(val, list, cand0) {
+    var v = val.slice(), cand = startCands(v, cand0), out = [];
     for (var k = 0; k < list.length; k++) {
       var want = sig(list[k]), got = null, r = FIND[list[k].t](v, cand);
       for (var q = 0; q < r.length; q++) if (sig(r[q]) === want) { got = r[q]; break; }
@@ -415,23 +425,30 @@ var SE = (function () {
     return out;
   }
   // 逐个试着去掉排除步骤：去掉后剩下的推理仍然成立、最后还能填同一个数，就不讲这一步
-  function prune(val, insts) {
+  function prune(val, insts, cand0) {
     var cur = insts, changed = true;
     // 删掉一步后，前面原来删不掉的步骤可能也变得可以删了：从头再试，直到一整轮都删不掉
     while (changed) {
       changed = false;
       for (var i = 0; i < cur.length - 1; i++) {
-        var r = replay(val, cur.slice(0, i).concat(cur.slice(i + 1)));
+        var r = replay(val, cur.slice(0, i).concat(cur.slice(i + 1)), cand0);
         if (r) { cur = r; changed = true; break; }
       }
     }
-    return replay(val, cur) || insts;
+    return replay(val, cur, cand0) || insts;
   }
-  function build_(val, insts) {
-    var v = val.slice(), cand = basicCands(v), steps = [];
+  function build_(val, insts, cand0) {
+    var v = val.slice(), cand = startCands(v, cand0), steps = [], b = basicCands(v);
+    var fromNotes = cand.some(function (m, i) { return m !== b[i]; });   // 玩家的笔记已经划掉过一些候选数
+    var vb = val.slice(), cb = b.slice(), basicOk = true;   // 同样的步骤在“不看笔记”时是否也成立
     insts.forEach(function (inst, k) {
-      steps.push({ inst: inst, frames: describe(inst, v, cand, { basic: k === 0 }), cand: cand.slice() });
-      if (!inst.place) apply(inst, v, cand);
+      var want = sig(inst), r = basicOk ? FIND[inst.t](vb, cb) : [], ok = false;
+      for (var q = 0; q < r.length; q++) if (sig(r[q]) === want) { ok = true; break; }
+      var needNotes = fromNotes && !ok;   // 这一步要靠玩家的笔记才成立
+      var fr = describe(inst, v, cand, { basic: k === 0 && !fromNotes, notes: k === 0 && fromNotes, notesLater: k > 0 && needNotes });
+      if (needNotes && !inst.place && fr.length) fr[0].text = "按你记的笔记，" + fr[0].text;
+      steps.push({ inst: inst, frames: fr, cand: cand.slice() });
+      if (!inst.place) { apply(inst, v, cand); if (ok) apply(inst, vb, cb); else basicOk = false; }
     });
     return steps;
   }

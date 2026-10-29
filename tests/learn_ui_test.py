@@ -153,7 +153,9 @@ async def main():
         # 4f 用完后不能再用
         before = await pg.evaluate("G.val.join('')")
         await pg.click("#tHint")
-        check(await pg.evaluate("G.val.join('')") == before and not await pg.evaluate("$('hpanel').classList.contains('on')"), "hint used after limit")
+        # 用完以后：新的提示不给；已经付过次数、还没填的那一格可以免费再看讲解
+        st = await pg.evaluate("[G.val.join(''), G.hints, $('hpanel').classList.contains('on'), !!(H && H.open && isPaid(H.place)), !!HC]")
+        check(st[0] == before and st[1] == 3 and not st[4] and (not st[2] or st[3]), f"hint used after limit {st}")
         # 4g 返回键先关面板
         await pg.evaluate("G.hints = 2; $('tHint').click(); $('hpNext').click()")
         check(await pg.evaluate("handleBack()") is True and await pg.evaluate("$('game').classList.contains('on')"), "back should close hint panel first")

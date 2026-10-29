@@ -6,8 +6,8 @@ android {
         applicationId 'com.sudoku.hundred'
         minSdk 24
         targetSdk 34
-        versionCode 12
-        versionName '3.1'
+        versionCode 17
+        versionName '3.6'
     }
     // Release signing is read from android/keystore.properties (not committed). Without it, the release APK is built unsigned.
     def ksFile = rootProject.file('keystore.properties')

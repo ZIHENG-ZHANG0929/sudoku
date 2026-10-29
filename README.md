@@ -40,8 +40,13 @@ The whole game is a single HTML/CSS/JavaScript page, wrapped in a tiny Android W
 - A hint first asks for confirmation, so it is not used up by mistake.
 - It then explains the reasoning step by step, with highlighted cells and crossed-out candidates, and finally fills in the number.
 - The hint engine finds the next deduction from the current board, then removes every elimination that does not contribute to it, so explanations stay short (at most 4 steps across all levels).
-- Reopening a hint on an unchanged board, even after the app was restarted, does not cost another hint.
-- If the selected cell is filled in wrong, the hint corrects it directly.
+- Hints reason from the player's own pencil marks, so they never ask you to cross out a candidate you didn't write. Cells whose marks are missing the answer, or still contain digits already placed in the same row/column/box, are explained on the first frame.
+- "Fill in" also removes the explained eliminations from your notes (undo restores them).
+- A hint is charged per target (cell + digit): seeing the same target again is free — after closing it, undoing, editing notes, filling other cells or restarting the app. If a paid target is still empty, the next hint fills it for free.
+- If any cell is filled in wrong, the hint corrects it first. With error highlighting off, the confirmation text doesn't reveal whether the board has a mistake.
+
+**First steps**
+- The first 9×9 and 6×6 level open with a short "how to play" card (rules, how to enter digits and notes); it can be reopened from Settings at any time.
 
 **Technique practice**
 - 10 lessons: naked single, hidden single (box), hidden single (row/column), pointing/claiming, pairs, triples, X-Wing, XY-Wing, XYZ-Wing, swordfish.
@@ -51,12 +56,14 @@ The whole game is a single HTML/CSS/JavaScript page, wrapped in a tiny Android W
 - The board fills the screen width and digits are bold and nearly fill each cell.
 - Number keys are laid out in two rows, the notes of the selected cell are shown in large text above the board, and all text is about 1.5× larger.
 - It switches on automatically when the Android system font scale is ≥ 1.15, until the player toggles it manually.
-- Tuned for small and narrow screens, down to 260 CSS px wide.
+- Tuned for small and narrow screens, down to 260 CSS px wide. The board size is computed from the space actually left on screen; on short screens the keys are compressed in two steps so the large-mode board is never smaller than in normal mode.
+- On small screens, when an explanation doesn't fit, the page slides up (hiding the top bar) instead of covering the board; it stays put while you page through the steps.
+- Tablets/foldables that ignore the portrait lock get a landscape layout: board on the left, controls on the right.
 
 **Robustness**
 - Progress is saved after every move. After the system kills the app, it returns to the same game.
 - Corrupted or old save data never prevents the app from starting.
-- Double-tap protection: when a tap changes the screen or opens/closes a panel, a second tap at the same spot is ignored for 0.4–0.75 s. Fast taps that don't change the UI, such as entering notes quickly, are never blocked.
+- Double-tap protection: when a tap changes the screen or opens/closes a panel, a second tap at the same spot is ignored for 0.4–0.75 s, and taps right after the page slides back are ignored too. Fast taps that don't change the UI are never blocked. In note mode, a quick second tap on the same digit doesn't undo the note just toggled.
 - The Android back button closes panels first, then goes back one screen, then exits.
 - If the WebView renderer is killed in the background, the page is reloaded instead of crashing.
 

@@ -38,16 +38,17 @@ class Model:
         g = dict(n=n, given=[int(c) for c in P[n - 1]["p"]], sol=[int(c) for c in P[n - 1]["s"]],
                  history=[], noteMode=False, done=False)
         s = self.saves.get(n)
-        if s: g.update(val=list(s["val"]), notes=list(s["notes"]), mistakes=s["mistakes"], hints=s["hints"])
+        if s: g.update(val=list(s["val"]), notes=list(s["notes"]), mistakes=s["mistakes"], hints=s["hints"], noteMode=s.get("noteMode", False))
         else: g.update(val=list(g["given"]), notes=[0] * NN, mistakes=0, hints=0)
-        g["hsig"] = self.hsigs.get(n) if s else None
+        hs, paid = self.hsigs.get(n, (None, ())) if s else (None, ())
+        g["hsig"], g["paid"] = hs, set(paid)
         self.G = g; self.sel = -1; self.current = n
 
     def persist(self):
         g = self.G
         if g and not g["done"]:
-            self.saves[g["n"]] = dict(val=list(g["val"]), notes=list(g["notes"]), mistakes=g["mistakes"], hints=g["hints"])
-            self.hsigs[g["n"]] = g["hsig"]
+            self.saves[g["n"]] = dict(val=list(g["val"]), notes=list(g["notes"]), mistakes=g["mistakes"], hints=g["hints"], noteMode=g["noteMode"])
+            self.hsigs[g["n"]] = (g["hsig"], tuple(g["paid"]))
 
     def correct(self, i): g = self.G; return g["val"][i] != 0 and g["val"][i] == g["sol"][i]
     def wrong(self, i): g = self.G; return g["val"][i] != 0 and not g["given"][i] and g["val"][i] != g["sol"][i]
@@ -92,7 +93,9 @@ class Model:
         self.finish()
 
     def toggle_note(self):
-        if self.G: self.G["noteMode"] = not self.G["noteMode"]
+        if self.G:
+            self.G["noteMode"] = not self.G["noteMode"]
+            if not self.G["done"]: self.persist()   # 笔记模式也存档
 
     def erase(self):
         if not self.active() or self.sel < 0: return
@@ -111,23 +114,34 @@ class Model:
         self.G["val"], self.G["notes"], self.sel, self.G["mistakes"] = v, nt, s, mk   # 撤销也撤回错误次数
         self.finish(check=False)
 
-    def hint_at(self, changed):
+    def hint_at(self, changed, js_notes=None):
         """讲解型提示：网页一路点“下一步”直到填入。这里检查它填的格子是否合规，再同步到模型。"""
         if not self.active():
             return None if not changed else f"hint changed cells while inactive {changed}"
         g = self.G
-        wrong_sel = self.sel >= 0 and self.wrong(self.sel)
+        # 有填错的格子（选中的优先，否则按顺序第一个）：提示先改正它
+        wc = self.sel if self.sel >= 0 and self.wrong(self.sel) else next((i for i in range(NN) if self.wrong(i)), -1)
         sig = tuple(g["val"])
-        free = not wrong_sel and g["hsig"] == sig   # 同一盘面的提示已经付过次数（包括刷新前），不再扣
-        if g["hints"] >= HINTS and not free:
-            return None if not changed else f"hint filled {changed} with no hints left"
+        if not changed:
+            if g["hints"] >= HINTS: return None   # 次数用完（同一盘面换了一格讲也算新的提示）
+            return "hint changed nothing"
         if len(changed) != 1: return f"hint should fill exactly one cell, changed {changed}"
-        i = changed[0]
+        i = changed[0]; d = g["sol"][i]
+        if wc >= 0 and i != wc: return f"hint ignored the wrong cell {wc}, filled {i}"
         if self.correct(i): return f"hint filled an already-correct cell {i}"
-        if self.sel >= 0 and self.wrong(self.sel) and i != self.sel: return f"hint ignored the wrong selected cell {self.sel}, filled {i}"
-        self.push(); d = g["sol"][i]
-        if not wrong_sel: g["hsig"] = sig
+        # 讲（或改正）的还是上次付过次数的那一格那个数：不再扣（包括刷新前）
+        free = (i, d) in g["paid"] or (not g["paid"] and wc < 0 and g["hsig"] == sig)   # 这一局付过的目标都免费
+        if g["hints"] >= HINTS and not free: return f"hint filled {changed} with no hints left"
+        self.push()
+        if wc < 0: g["hsig"] = sig
+        g["paid"].add((i, d))
         g["val"][i] = d; g["notes"][i] = 0; g["hints"] += 0 if free else 1; self.clean(i, d); self.sel = i
+        # “填入”时讲解里划掉的候选数也从笔记里划掉：网页的笔记只能比模型少，而且不能划掉答案
+        if js_notes is not None and wc < 0:
+            for j in range(NN):
+                if js_notes[j] & ~g["notes"][j]: return f"hint added notes at {j}"
+                if g["notes"][j] & ~js_notes[j] & (1 << (g["sol"][j] - 1)): return f"hint struck the answer from notes at {j}"
+            g["notes"] = list(js_notes)
         self.finish()
         return None
 
@@ -145,7 +159,7 @@ class Model:
 
 STATE_JS = """() => {
   const ls = k => { const v = localStorage.getItem('sudoku.' + k); return v == null ? null : JSON.parse(v); };
-  const saves = {}; for (let n = 1; n <= __LEVELS__; n++) { const s = ls('__KEYP__' + n); if (s) saves[n] = {val: s.val, notes: s.notes, mistakes: s.mistakes, hints: s.hints}; }
+  const saves = {}; for (let n = 1; n <= __LEVELS__; n++) { const s = ls('__KEYP__' + n); if (s) saves[n] = {val: s.val, notes: s.notes, mistakes: s.mistakes, hints: s.hints, noteMode: s.noteMode === true}; }
   const out = { stars: (ls('__PROGK__') || {stars: {}}).stars, saves, current: ls('__CURK__'), settings: ls('settings'),
     screen: $('game').classList.contains('on') ? 'game' : 'home', G: null };
   if (G) {
@@ -155,7 +169,7 @@ STATE_JS = """() => {
       v: cells.map(c => c.querySelector('.v').textContent),
       notes: cells.map(c => c.querySelector('.notes').style.display === 'none' ? '-' : [...c.querySelectorAll('.notes span')].map(s => s.textContent).join('')),
       cls: cells.map(c => ['given','user','wrong','sel'].map(k => c.classList.contains(k) ? 1 : 0).join('')),
-      keys: [...pad.children].map(k => (k.classList.contains('done') ? 'D' : '') + k.querySelector('small').textContent),
+      keys: [...pad.children].map(k => (k.classList.contains('done') ? 'D' : '') + (k.classList.contains('used') ? 'U' : '') + k.querySelector('small').textContent),
       badge: $('hintBadge').textContent, undoDis: $('tUndo').disabled, noteOn: $('tNote').classList.contains('on'),
       err: $('gErr').textContent,
     };
@@ -176,7 +190,8 @@ def expected_dom(m):
     cnt = [0] * 10
     for i in range(NN):
         if g["val"][i] and (not s["showErrors"] or not m.wrong(i)): cnt[g["val"][i]] += 1
-    keys = [("D" if N - cnt[d] <= 0 else "") + (str(N - cnt[d]) if N - cnt[d] > 0 else "") for d in range(1, N + 1)]
+    hide = s["showErrors"] and not g["noteMode"]   # 数到了：标出错误开着且不在笔记模式时藏起来，否则只变淡
+    keys = [(("D" if hide else "U") if N - cnt[d] <= 0 else "") + (str(N - cnt[d]) if N - cnt[d] > 0 else "") for d in range(1, N + 1)]
     return dict(v=v, notes=notes, cls=cls, keys=keys, badge=str(HINTS - g["hints"]), undoDis=len(g["history"]) == 0,
                 noteOn=g["noteMode"], err=f"错误 {g['mistakes']}" if s["showErrors"] else "")
 
@@ -190,8 +205,8 @@ def compare(m, js, where):
     for k, v in js["saves"].items():
         if k in want_saves: continue
         n = int(k)
-        fresh = dict(val=[int(c) for c in P[n - 1]["p"]], notes=[0] * NN, mistakes=0, hints=0)
-        cur = (dict(val=m.G["val"], notes=m.G["notes"], mistakes=m.G["mistakes"], hints=m.G["hints"])
+        fresh = dict(val=[int(c) for c in P[n - 1]["p"]], notes=[0] * NN, mistakes=0, hints=0, noteMode=False)
+        cur = (dict(val=m.G["val"], notes=m.G["notes"], mistakes=m.G["mistakes"], hints=m.G["hints"], noteMode=m.G["noteMode"])
                if m.G and m.G["n"] == n and not m.G["done"] else None)
         if v == fresh or v == cur:
             want_saves[k] = v; m.saves[n] = copy.deepcopy(v)
@@ -199,7 +214,7 @@ def compare(m, js, where):
     for k in list(want_saves):
         n = int(k)
         fresh = dict(val=[int(c) for c in P[n - 1]["p"]], notes=[0] * NN, mistakes=0, hints=0)
-        if k not in js["saves"] and want_saves[k] == fresh:
+        if k not in js["saves"] and {a: b for a, b in want_saves[k].items() if a != "noteMode"} == fresh:   # 只开了笔记模式也不留存档
             del want_saves[k]; m.saves.pop(n, None)
     if js["saves"] != want_saves:
         diff = set(js["saves"]) ^ set(want_saves) or [k for k in want_saves if js["saves"].get(k) != want_saves[k]]
@@ -298,8 +313,9 @@ async def run(pg, seed):
             before = await pg.evaluate("G ? G.val.slice() : null")
             await pg.evaluate("$('tHint').click(); for (let k = 0; k < 80 && $('hpanel').classList.contains('on'); k++) $('hpNext').click();")
             after_ = await pg.evaluate("G ? G.val.slice() : null")
+            jn = await pg.evaluate("G ? G.notes.slice() : null")
             changed = [i for i in range(NN) if before and after_ and before[i] != after_[i]]
-            herr = m.hint_at(changed)
+            herr = m.hint_at(changed, jn)
             if herr: return [f"seed {seed} step {step} hint: {herr}"], log[-12:]
         elif a == "toggle":
             await pg.evaluate(f"document.querySelector('.switch[data-key={act[1]}]').click()"); m.toggle(act[1])

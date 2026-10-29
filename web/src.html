@@ -56,6 +56,7 @@ svg { display: block; }
 .home-head { display: flex; align-items: flex-end; justify-content: space-between; padding: 28px 2px 22px; }
 .home-title { font-family: var(--num); font-weight: 600; font-size: 44px; line-height: 1; letter-spacing: .04em; margin: 0; }
 .home-sub { color: var(--ink-2); font-size: 14px; margin-top: 10px; }
+.home-sub span { white-space: nowrap; }
 .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 22px; color: var(--ink-2); }
 .icon-btn:active { background: var(--accent-softer); }
 
@@ -80,6 +81,7 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .lv .st { display: flex; gap: 2px; height: 6px; }
 .lv .bt { font-family: var(--ui); font-size: 10px; line-height: 12px; height: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .lv.cur .bt { color: var(--ink-3); }
+.lv .bt.ing { color: var(--accent); font-weight: 600; }
 .lv .st i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
 .lv .st i.f { background: var(--star); }
 .lv.cur { border-color: var(--accent); border-width: 2px; color: var(--accent); }
@@ -154,6 +156,11 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .key small { font-family: var(--ui); font-size: 11px; color: var(--ink-3); margin-top: 1px; }
 .key:active { background: var(--accent-soft); }
 .key.done { visibility: hidden; }
+.key.used { opacity: .5; }   /* 数到了，但还能点（标出错误关着时可能有填错的，笔记模式下要删残留的笔记）；比不能点的按钮（.35）亮一些 */
+.tools.dim .tool { opacity: .4; }   /* 提示面板开着 */
+.pad.dim, .pad.tipdim { visibility: hidden; }
+.stats span:empty::before { content: "\00a0"; }   /* 关掉“标出错误”时这一行不变矮，棋盘不跳 */   /* 数字键藏起来：被面板盖住一半时像怪符号，老人还会去点 */
+.key small:empty::before { content: "\00a0"; }   /* 没有剩余数的键也占住小数字的位置，数字不往下掉 */
 .key { -webkit-touch-callout: none; }
 .pad.notes-mode .key { color: var(--accent); font-size: 22px; background: var(--accent-softer); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .pad.notes-mode .key small { color: var(--accent); opacity: .7; }
@@ -190,15 +197,15 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .link-btn { display: block; color: var(--error); font-size: 14px; padding: 16px 0 0; }
 .link-btn.plain { color: var(--accent); }
 
-.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 28px); transform: translate(-50%, 20px); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 22px; font-size: 14px; opacity: 0; transition: .2s; pointer-events: none; z-index: 20; white-space: nowrap; }
-@media (max-width: 340px) { .toast { white-space: normal; width: max-content; max-width: calc(100vw - 24px); box-sizing: border-box; text-align: center; } }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 28px); transform: translate(-50%, 20px); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 22px; font-size: 14px; opacity: 0; transition: .2s; pointer-events: none; z-index: 20; white-space: normal; width: max-content; max-width: calc(100vw - 24px); box-sizing: border-box; text-align: center; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------- 讲解高亮（棋盘通用） ---------- */
 .cell.h-zone { background: var(--accent-softer); }
 .cell.h-pat { background: var(--same); }
-.cell.h-tgt { background: var(--error-soft); box-shadow: inset 0 0 0 2px var(--error); }
+.cell.h-tgt { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
 .cell.h-ghost .v { color: var(--accent); opacity: .75; }
+.cell.h-no { background: repeating-linear-gradient(135deg, var(--accent-softer) 0 5px, var(--ink-3) 5px 6.5px); }   /* 讲解里“放不了”的空格 */
 .notes span.k { color: var(--bg); background: var(--accent); border-radius: 30%; }
 .notes span.x { color: var(--error); text-decoration: line-through; font-weight: 700; }
 .cell.fill .v { color: var(--ink); font-weight: 400; }
@@ -229,7 +236,11 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .no-ar #tboard { width: min(calc(100vw - 32px), 480px, calc(100vh - 360px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 360px)); }
 .tpanel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 12px 0 10px;
   min-height: 92px; max-height: 150px; overflow-y: auto; font-size: 14px; line-height: 1.65; }
-.tpanel .tstep { font-size: 12px; color: var(--ink-3); margin-bottom: 2px; }
+.tpanel .tstep { font-size: 12px; color: var(--ink-3); }
+.tstep-row { position: sticky; top: -10px; margin: -10px -14px 2px; padding: 10px 14px 0; background: var(--surface); display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+.t-more { display: none; margin-left: auto; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.t-more.on { display: block; }
+.large .t-more { font-size: 16px; }
 .s-more { display: none; position: sticky; bottom: -10px; margin: 0 -14px -10px; padding: 4px 14px 6px; text-align: right; font-size: 12px; color: var(--ink-3);
   background: linear-gradient(transparent, var(--surface) 40%); pointer-events: none; }
 .s-more.on { display: block; }
@@ -253,18 +264,18 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .hpanel.on { display: flex; }
 .hpanel-in { pointer-events: auto; width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--line);
   border-radius: 16px; box-shadow: 0 6px 24px rgb(0 0 0 / .14); padding: 12px 16px; animation: up .2s ease-out; }
-.hp-step { font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
+.hp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 10px; margin-bottom: 4px; }
+.hp-step { font-size: 12px; color: var(--ink-3); }
 .hp-text { font-size: 15px; line-height: 1.65; max-height: 8.3em; overflow-y: auto; }
-.hp-wrap { position: relative; }
-.hp-more { display: none; position: absolute; right: 0; bottom: 0; font-size: 12px; line-height: 1.6; color: var(--ink-3); padding-left: 2.5em;
-  background: linear-gradient(to right, transparent, var(--surface) 2em); pointer-events: none; }
-.hp-more.on { display: block; }
+.hp-more { display: none; visibility: hidden; margin-left: auto; font-size: 12px; color: var(--ink-3); white-space: nowrap; pointer-events: none; }
+.hp-more.show { display: block; }   /* 文字放不下时占住位置（在步骤标题那一行的右边，不压正文） */
+.hp-more.on { display: block; visibility: visible; }
 .hp-btns { display: flex; gap: 8px; margin-top: 10px; }
 .hp-btns .btn { height: 42px; font-size: 15px; }
 .hpanel.tight .hpanel-in { padding-top: 8px; padding-bottom: 8px; }
 .hpanel.tight .hp-btns { margin-top: 6px; }
 .hpanel.tight .hp-btns .btn { height: 46px; }
-.hpanel.tight .hp-step { margin-bottom: 0; }
+.hpanel.tight .hp-head { margin-bottom: 0; }
 @media (max-height: 700px) { #tboard { width: min(100%, calc(100vh - 318px)); } .no-ar #tboard { width: min(calc(100vw - 32px), 480px, calc(100vh - 318px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 318px)); } .tpanel { min-height: 76px; max-height: 110px; margin: 8px 0; font-size: 13px; } #tpad .key { height: 48px; } .tctrl .btn { height: 40px; } }
 @media (max-height: 700px) { .board { width: min(100%, calc(100vh - 262px)); } .bar { height: 44px; margin-bottom: 0; } .stats { padding: 2px 4px 6px; } .key { height: 54px; font-size: 28px; } .tools { margin: 12px 0 8px; } .tool .ic { width: 38px; height: 38px; } }
 .no-ar .board { width: min(calc(100vw - 32px), 480px, calc(100vh - 300px)); height: min(calc(100vw - 32px), 480px, calc(100vh - 300px)); grid-template-rows: repeat(9, 1fr); }
@@ -287,7 +298,8 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .large .home-sub { font-size: 20px; line-height: 1.5; }
 .large .icon-btn { width: 56px; height: 56px; border-radius: 28px; }
 .large .icon-btn svg { width: 32px; height: 32px; }
-.large .continue { padding: 22px; margin-bottom: 24px; }
+.large .continue { padding: 22px; margin-bottom: 24px; flex-wrap: wrap; gap: 2px 12px; }
+.large .continue b, .large .continue span { white-space: nowrap; }
 .large .continue b { font-size: 25px; }
 .large .continue span { font-size: 19px; opacity: .85; }
 .large .learn { padding: 20px 22px; margin: -10px 0 26px; }
@@ -301,6 +313,7 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .large .lv .st { height: 12px; gap: 5px; }
 .large .lv .st i { width: 12px; height: 12px; }
 .large .lv .bt { font-size: 19px; line-height: 22px; height: 22px; color: var(--ink-2); }
+.large .lv .bt.ing { color: var(--accent); font-weight: 600; }
 .large.no-ar .lv { height: calc((min(100vw - 24px, 480px) - 24px) / 3); }
 .large .bar { height: 58px; margin-bottom: 2px; }
 .large .bar-title { font-size: 24px; }
@@ -356,7 +369,7 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .large .toast { box-sizing: border-box; font-size: 20px; padding: 14px 22px; border-radius: 28px; white-space: normal; width: max-content; max-width: calc(100vw - 24px); text-align: center; }
 .large .page-sub { font-size: 19px; }
 .large .lcard { padding: 16px; }
-.large .lcard-num { font-size: 30px; width: 32px; }
+.large .lcard-num { font-size: 30px; width: 40px; letter-spacing: -.04em; }
 .large .lcard-name { font-size: 24px; }
 .large .lcard-tier { font-size: 18px; }
 .large .lcard-short { font-size: 19px; margin: 6px 0 14px; }
@@ -376,7 +389,7 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 .large #lesson.teach .tpanel { max-height: 270px; }
 .large.no-ar .board { width: min(calc(100vw - 12px), 480px, calc(100vh - 384px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 384px)); }
 .large.no-ar #tboard { width: min(calc(100vw - 12px), 480px, calc(100vh - 448px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 448px)); }
-@media (min-height: 800px) {
+@media (min-height: 880px) {
   .large .key { height: 80px; font-size: 56px; }
   .large .key small { font-size: 18px; margin-bottom: 10px; }
   .large .tool .ic { width: 58px; height: 58px; border-radius: 29px; }
@@ -385,10 +398,12 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 @media (max-height: 700px) {
   .large .board { width: min(100%, calc(100vh - 318px)); }
   .large.no-ar .board { width: min(calc(100vw - 12px), 480px, calc(100vh - 318px)); height: min(calc(100vw - 12px), 480px, calc(100vh - 318px)); }
-  .large .bar { height: 48px; }
+  .large .bar { height: 50px; }
+  .large .bar-title { font-size: 22px; line-height: 1.15; }
+  .large .bar-tier { font-size: 16px; line-height: 1.15; margin-top: 1px; }
   .large .stats { min-height: 34px; padding-bottom: 2px; }
   .large #gNote { font-size: 24px; }
-  .large .tools { margin: 4px 0 4px; }
+  .large .tools { margin: 8px 0 8px; }
   .large .tool { font-size: 16px; }
   .large .tool .ic { width: 42px; height: 42px; }
   .large .tool .ic svg { width: 26px; height: 26px; }
@@ -400,6 +415,52 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
   .large #lesson.teach .tpanel { max-height: 164px; }
   .large #tpad .key { height: 48px; }
   .large .tctrl .btn { height: 50px; }
+}
+/* 棋盘被高度卡小了的屏（fitBoard 判断后给 #game 加 sq1，还不够再换成 squeeze）：大字模式的顶栏、工具按钮和数字键压一压，棋盘不比普通模式小 */
+.large #game.sq1 .tools { margin: 8px 0 8px; }
+.large #game.sq1 .tool .ic { width: 40px; height: 40px; }
+.large #game.sq1 .tool .ic svg { width: 26px; height: 26px; }
+.large #game.sq1 .key { height: 50px; font-size: 42px; }
+.large #game.sq1 .key small { margin-bottom: 6px; font-size: 15px; }
+.large #game.squeeze .bar { height: 46px; margin-bottom: 0; }
+.large #game.squeeze .bar-title { font-size: 21px; line-height: 1.15; }
+.large #game.squeeze .bar-tier { font-size: 15px; line-height: 1.15; }
+.large #game.squeeze .stats { min-height: 30px; padding-bottom: 0; }
+.large #game.squeeze #gNote { font-size: 22px; }
+.large #game.squeeze #gNote.many { font-size: 20px; }
+.large #game.squeeze .tools { margin: 8px 0 8px; }
+.large #game.squeeze .tool { font-size: 15px; gap: 0; padding: 2px 0; line-height: 1.15; }
+.large #game.squeeze .tool .ic { width: 32px; height: 32px; }
+.large #game.squeeze .tool .ic svg { width: 24px; height: 24px; }
+.large #game.squeeze .tool .badge { min-width: 22px; height: 22px; border-radius: 11px; font-size: 14px; right: calc(50% - 30px); top: -2px; }
+.large #game.squeeze .key { height: 46px; font-size: 38px; }
+.large #game.squeeze .key small { margin-bottom: 4px; font-size: 13px; }
+.large #game.squeeze .pad { gap: 4px; }
+/* 260 宽一类的极窄屏，大字模式下几处标题别断成“专/家”“这一/关” */
+@media (max-width: 290px) {
+  .large .lcard-name { font-size: 20px; } .large .lcard-tier { font-size: 15px; white-space: nowrap; } .large .sheet h2 { font-size: 23px; }
+  .large .continue b { font-size: 21px; } .large .continue span { font-size: 16px; }
+  .large .win-grid b { font-size: 28px; } .large .win-grid { column-gap: 8px; }
+}
+/* 横屏（平板、折叠屏会忽略竖屏锁定）：棋盘放左边，标题、按钮和数字键放右边 */
+@media (orientation: landscape) and (min-width: 600px) and (min-aspect-ratio: 6/5) {
+  #game .wrap, #lesson .wrap { max-width: 1100px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: 1fr auto auto auto auto 1fr; column-gap: 24px; }
+  #game .bar, #lesson .bar { grid-column: 2; grid-row: 2; }
+  #game .stats, #lesson .tpanel { grid-column: 2; grid-row: 3; }
+  #game .tools, #lesson .tctrl { grid-column: 2; grid-row: 4; }
+  #game .pad, #lesson .pad { grid-column: 2; grid-row: 5; }
+  #game .board, #lesson .board { grid-column: 1; grid-row: 1 / 7; align-self: center; justify-self: center; width: min(calc(100vh - 28px), calc(100vw - 396px), 720px); }
+  .no-ar #game .board, .no-ar #lesson .board { height: min(calc(100vh - 28px), calc(100vw - 396px), 720px); }
+  #lesson .tpanel { max-height: 40vh; }
+  .hpanel { justify-content: flex-end; padding-right: 16px; padding-right: max(16px, calc(50vw - 550px)); }   /* 和右栏对齐 */
+  .hpanel-in { max-width: 340px; }
+  .toast { left: auto; right: 16px; right: max(16px, calc(50vw - 550px)); max-width: 340px; transform: translate(0, 20px); }
+  .toast.on { transform: translate(0, 0); }
+  .large #game .wrap, .large #lesson .wrap { grid-template-columns: minmax(0, 1fr) 380px; }
+  .large #game .board, .large #lesson .board { width: min(calc(100vh - 28px), calc(100vw - 416px), 696px); }   /* 左栏 = 100vw - 12 - 380 - 24，最宽 1100 - 404 */
+  .large.no-ar #game .board, .large.no-ar #lesson .board { height: min(calc(100vh - 28px), calc(100vw - 416px), 696px); }
+  .large .hpanel { padding-right: 6px; padding-right: max(6px, calc(50vw - 550px)); }
+  .large .hpanel-in { max-width: 380px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -478,7 +539,7 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
       <span style="width:44px"></span>
     </div>
     <div class="board" id="tboard"></div>
-    <div class="tpanel" id="tPanel"><div class="tstep" id="tStep"></div><div id="tText"></div><div class="s-more" id="tMore">往上滑看全部 ↓</div></div>
+    <div class="tpanel" id="tPanel"><div class="tstep-row"><div class="tstep" id="tStep"></div><div class="t-more" id="tMore">下面还有，往上滑 ↓</div></div><div id="tText"></div></div>
     <div class="tctrl"><button class="btn" id="tBtnA"></button><button class="btn primary" id="tBtnB"></button></div>
     <div class="pad" id="tpad"></div>
   </div>
@@ -487,16 +548,16 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 <!-- 讲解型提示 -->
 <div class="hpanel" id="hpanel" role="dialog" aria-label="提示">
   <div class="hpanel-in">
-    <div class="hp-step" id="hpStep"></div>
-    <div class="hp-wrap"><div class="hp-text" id="hpText"></div><div class="hp-more" id="hpMore">往上滑看全部 ↓</div></div>
+    <div class="hp-head"><div class="hp-step" id="hpStep"></div><div class="hp-more" id="hpMore">下面还有，往上滑 ↓</div></div>
+    <div class="hp-text" id="hpText"></div>
     <div class="hp-btns"><button class="btn" id="hpClose">关闭</button><button class="btn" id="hpPrev">上一步</button><button class="btn primary" id="hpNext"></button></div>
   </div>
 </div>
 <!-- 新难度段提醒 -->
 <div class="hpanel" id="tipPanel" role="dialog" aria-label="难度提醒">
   <div class="hpanel-in">
-    <div class="hp-step">新的难度</div>
-    <div class="hp-wrap"><div class="hp-text" id="tipText"></div><div class="hp-more" id="tipMore">往上滑看全部 ↓</div></div>
+    <div class="hp-head"><div class="hp-step" id="tipStep">新的难度</div><div class="hp-more" id="tipMore">下面还有，往上滑 ↓</div></div>
+    <div class="hp-text" id="tipText"></div>
     <div class="hp-btns"><button class="btn" id="tipClose">直接开始</button><button class="btn primary" id="tipGo">先去学习</button></div>
   </div>
 </div>
@@ -523,15 +584,16 @@ html.lock { overflow: hidden; }   /* 弹层打开时背后的页面不跟着滑 
 <div class="sheet-bg" id="setSheet">
   <div class="sheet" id="setBody">
     <div class="sheet-head"><h2>设置</h2><button class="link-btn plain" id="setDone">完成</button></div>
-    <div class="set-row"><div><b>大字模式</b><span>字更大、颜色更深、按钮更好按，适合老人。手机系统字体调大时会自动打开。</span></div><button class="switch" data-key="large" aria-label="大字模式"></button></div>
-    <div class="set-row"><div><b>标出错误</b><span>填错立即标红并计入错误次数。关闭后只在填满时检查。</span></div><button class="switch" data-key="showErrors" aria-label="标出错误"></button></div>
-    <div class="set-row"><div><b>自动清理笔记</b><span>填入数字后，删掉同行、同列、同宫笔记里的这个数字。</span></div><button class="switch" data-key="autoClean" aria-label="自动清理笔记"></button></div>
+    <div class="set-row"><div><b>大字模式</b><span>字更大、颜色更深、按钮更好按，适合老人。手机系统字体调大时会自动打开（亲手开关过一次后，就按你的选择）。</span></div><button class="switch" data-key="large" aria-label="大字模式"></button></div>
+    <div class="set-row"><div><b>标出错误</b><span>填错立即标红并计入错误次数。关闭后不标红、不计错，填满时才提醒有错。</span></div><button class="switch" data-key="showErrors" aria-label="标出错误"></button></div>
+    <div class="set-row"><div><b>自动清理笔记</b><span>填入数字后，删掉同行、同列、同宫笔记里的这个数字（标出错误开着时，填错的数字不去删）。</span></div><button class="switch" data-key="autoClean" aria-label="自动清理笔记"></button></div>
     <div class="set-row"><div><b>高亮相同数字</b><span>选中格子时，标出盘面上所有相同的数字和笔记。</span></div><button class="switch" data-key="highlightSame" aria-label="高亮相同数字"></button></div>
-    <div class="set-row"><div><b>显示计时</b><span>关掉后不显示计时，关卡列表上也不显示最快用时。计时从第一次点格子开始。</span></div><button class="switch" data-key="showTimer" aria-label="显示计时"></button></div>
+    <div class="set-row"><div><b>显示计时</b><span>关掉后不显示计时，关卡列表上也不显示最快用时。计时从第一次点格子（或点提示）开始。</span></div><button class="switch" data-key="showTimer" aria-label="显示计时"></button></div>
+    <button class="link-btn plain" id="howBtn">怎么玩</button>
     <button class="link-btn plain" id="restartBtn">重新开始这一关</button>
     <button class="link-btn" id="resetBtn">清除全部进度</button>
     <div class="btns"><button class="btn primary" id="setClose">完成</button></div>
-    <div class="s-more" id="setMore">往上滑还有更多 ↓</div>
+    <div class="s-more" id="setMore">下面还有，往上滑 ↓</div>
   </div>
 </div>
 
@@ -591,7 +653,7 @@ const store = {
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);
 const settings = { showErrors: true, autoClean: true, highlightSame: true, showTimer: true, large: false };
 { const s = store.get("settings", {}); if (isObj(s)) for (const k in settings) if (typeof s[k] === "boolean") settings[k] = s[k];
-  // 第一次打开时：手机系统字体调大了（安卓把字体缩放比例放在网址 #fs= 里），就自动打开大字模式
+  // 打开时：手机系统字体调大了（且没有亲手开关过大字模式）（安卓把字体缩放比例放在网址 #fs= 里），就自动打开大字模式
   const m = /fs=([\d.]+)/.exec(location.hash || "");
   if (!settings.large && !store.get("largeTouched", false) && m && parseFloat(m[1]) >= 1.15) { settings.large = true; store.set("settings", settings); }
 }
@@ -643,7 +705,11 @@ function loadGameFrom(key, P, geo) {
     mistakes: intIn(g.mistakes, 0, 1e6) ? g.mistakes : 0,
     hints: intIn(g.hints, 0, HINTS_PER_LEVEL) ? g.hints : 0,
     time: intIn(g.time, 0, 1e8) ? g.time : 0,
-    hsig: typeof g.hsig === "string" ? g.hsig : "" };
+    hsig: typeof g.hsig === "string" ? g.hsig : "",
+    // 这一局付过次数的提示目标（[格子, 数字]）；3.3 的存档只记了最近一个 hplace
+    hpaid: (Array.isArray(g.hpaid) ? g.hpaid : Array.isArray(g.hplace) ? [g.hplace] : [])
+      .filter(x => Array.isArray(x) && x.length === 2 && intIn(x[0], 0, geo.NN - 1) && intIn(x[1], 1, geo.N)).slice(-100),
+    noteMode: g.noteMode === true };
 }
 const maxCleared = () => Object.keys(progress.stars).reduce((m, k) => Math.max(m, +k), 0);
 const unlocked = n => n <= maxCleared() + 1;
@@ -673,7 +739,11 @@ const starSvg = (f, size = 40) => `<svg class="${f ? "f" : ""}" width="${size}" 
 
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("on");
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 1800);
+  // 提示面板开着时放到面板上面，别挡住面板里的按钮
+  const P = document.querySelector(".hpanel.on .hpanel-in");
+  t.style.bottom = P ? Math.round(window.innerHeight - P.getBoundingClientRect().top + 10) + "px" : "";
+  const ms = Math.min(settings.large ? 9000 : 6000, Math.max(1800, msg.length * (settings.large ? 230 : 150)));   // 老人读得慢：按字数延长，大字模式每秒四五个字
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), ms);
 }
 let homeY = 0;   // 首页的滚动位置：从关卡回来时回到原处，不用重新往下找
 function show(id) {
@@ -682,31 +752,36 @@ function show(id) {
   window.scrollTo(0, id === "home" ? homeY : 0);
 }
 function lockScroll() { document.documentElement.classList.toggle("lock", !!document.querySelector(".sheet-bg.on")); }
-function openSheet(id) { $(id).classList.add("on"); lockScroll(); if (id === "setSheet") { $("setBody").scrollTop = 0; scrollCue($("setBody"), $("setMore")); } }
+let setAt = 0;   // 设置面板打开的时间
+function openSheet(id) { $(id).classList.add("on"); lockScroll(); if (id === "setSheet") { setAt = performance.now(); $("setBody").scrollTop = 0; scrollCue($("setBody"), $("setMore")); } }
 // 内容比框高、还没滑到底时，显示“往上滑”提示
 function scrollCue(box, cue) {
   cue.classList.remove("on");
   if (box.scrollHeight > box.clientHeight + 2 && box.scrollTop + box.clientHeight < box.scrollHeight - 2) cue.classList.add("on");
 }
 function closeSheet(id) { $(id).classList.remove("on"); lockScroll(); }
-function confirmBox(title, text, yes, fn) {
+function confirmBox(title, text, yes, fn, info) {
   $("cfTitle").textContent = title; $("cfText").textContent = text; $("cfYes").textContent = yes;
+  $("cfNo").hidden = !!info;   // 只是说明：只有一个“知道了”
   $("cfYes").onclick = () => { closeSheet("confirmSheet"); fn(); };
   openSheet("confirmSheet");
 }
 $("cfNo").onclick = () => closeSheet("confirmSheet");
 
 // ---------- 首页 ----------
+// 存档里的对局真的下过几步（填过数、记过笔记、有错误或用过提示）
+const moved = (sv, n) => sv.mistakes > 0 || sv.hints > 0 || sv.notes.some(x => x) || sv.val.some((x, i) => x !== +M().puzzles[n - 1].p[i]);
 function renderHome() {
   const cleared = Object.keys(progress.stars).length;
   const stars = Object.values(progress.stars).reduce((a, b) => a + b, 0);
-  $("homeSub").textContent = cleared ? `已通关 ${cleared} / ${LEVELS()}　获得 ${stars} 颗星` : `${LEVELS()} 关，从易到难`;
+  $("homeSub").innerHTML = cleared ? `<span>已通关 ${cleared} / ${LEVELS()}</span>　<span>获得 ${stars} 颗星</span>` : `<span>${LEVELS()} 关，从易到难</span>`;   // 窄屏换行时不把“获得”拆开
   document.querySelectorAll("#modeSw button").forEach(b => { b.classList.toggle("on", +b.dataset.m === HM); b.setAttribute("aria-selected", +b.dataset.m === HM); });
   const next = Math.min(maxCleared() + 1, LEVELS());
   const saved = loadGame(next);
-  $("continueText").textContent = cleared === 0 && !saved ? "开始第 1 关" : (saved ? `继续第 ${next} 关` : `开始第 ${next} 关`);
+  const go = saved && moved(saved, next);   // 和关卡小块的“进行中”一样：只计了时、只开了笔记模式的不算
+  $("continueText").textContent = go ? `继续第 ${next} 关` : `开始第 ${next} 关`;
   $("continueSub").textContent = tierOf(next).name;
-  if (maxCleared() >= LEVELS() && !saved) { $("continueText").textContent = "已全部通关"; $("continueSub").textContent = "点任意关卡重玩"; }
+  if (maxCleared() >= LEVELS() && !go) { $("continueText").textContent = "已全部通关"; $("continueSub").textContent = `重玩第 ${LEVELS()} 关`; }
   $("continueBtn").onclick = () => startLevel(next);
   const pd = SE.LESSONS.reduce((a, L) => a + Object.values(practice.drills[L.id]).filter(v => v === 1).length + Object.keys(practice.full[L.id]).length, 0);
   $("learnSub").textContent = (HM === 6 ? "9×9 · " : "") + (pd ? `已完成 ${pd} / 120 道练习` : (HM === 6 ? "10 种方法，讲解加练习" : "10 种解题方法，讲解加练习"));
@@ -716,8 +791,9 @@ function renderHome() {
     let cells = "";
     for (let n = t.from; n <= t.to; n++) {
       const s = progress.stars[n] || 0, lock = !unlocked(n), cur = n === maxCleared() + 1;
-      const bt = s && settings.showTimer && progress.best[n] != null ? fmtShort(progress.best[n]) : "";
-      cells += `<button class="lv${lock ? " locked" : ""}${cur ? " cur" : ""}" data-n="${n}" ${lock ? 'aria-disabled="true"' : ""} aria-label="第 ${n} 关${bt ? "，最快 " + bt : ""}">${n}<span class="st">${[1, 2, 3].map(k => `<i class="${k <= s ? "f" : ""}"></i>`).join("")}</span><span class="bt">${bt}</span></button>`;
+      const sv = lock ? null : loadGame(n), ing = !!sv && moved(sv, n);   // 真的下过几步的对局
+      const bt = ing ? "进行中" : s && settings.showTimer && progress.best[n] != null ? fmtShort(progress.best[n]) : "";
+      cells += `<button class="lv${lock ? " locked" : ""}${cur ? " cur" : ""}" data-n="${n}" ${lock ? 'aria-disabled="true"' : ""} aria-label="第 ${n} 关${ing ? "，进行中" : bt ? "，最快 " + bt : ""}">${n}<span class="st">${[1, 2, 3].map(k => `<i class="${k <= s ? "f" : ""}"></i>`).join("")}</span><span class="bt${ing ? " ing" : ""}">${bt}</span></button>`;
     }
     return `<div class="tier"><div class="tier-head"><span class="tier-name">${t.name}</span><span class="tier-meta">第 ${t.from}–${t.to} 关　${got}/${t.to - t.from + 1}</span></div><div class="levels">${cells}</div></div>`;
   }).join("");
@@ -773,18 +849,19 @@ function startLevel(n) {
     notes: saved ? saved.notes : Array(GM.NN).fill(0),
     mistakes: saved ? saved.mistakes : 0,
     hints: saved ? saved.hints : 0,
-    time: saved ? saved.time : 0, hsig: saved ? saved.hsig : "",
-    history: [], noteMode: false, done: false, started: false,
+    time: saved && moved(saved, n) ? saved.time : 0, hsig: saved ? saved.hsig : "", hpaid: saved ? saved.hpaid : [],   // 首页写着“开始”的（没动过）从 0 计时
+    history: [], noteMode: saved ? saved.noteMode : false, done: false, started: false,
   };
   sel = -1; H = null; HC = null;
   store.del("curPractice");
   $("gTitle").textContent = `${M().title}第 ${n} 关`;
   $("gTier").textContent = tierOf(n).name;
   show("game");
-  render(); renderHint();
+  render(); renderHint(); fitBoard();
   startTimer();
   hideTip();
-  if (M().tips && TIER_TIPS[n] && !progress.stars[n] && !store.get("tip." + n, false)) { store.set("tip." + n, true); showTip(TIER_TIPS[n]); }
+  const tips = M().tips ? TIER_TIPS : TIPS6, tk = (M().tips ? "tip." : "tip6.") + n;   // 6×6 第 1 关也讲一次基本操作
+  if (tips[n] && !progress.stars[n] && !store.get(tk, false)) { tipKey = tk; showTip(tips[n], M().tips, n === 1 ? "怎么玩" : "新的难度"); }
 }
 function startPractice(k, j) {
   const F = LESSON_DATA[k].full[j], P = { p: F.p, s: F.s };
@@ -796,24 +873,24 @@ function startPractice(k, j) {
     n: 0, m: 9, practice: { k, j, P }, given, sol,
     val: saved ? saved.val : given.slice(),
     notes: saved ? saved.notes : Array(81).fill(0),
-    mistakes: saved ? saved.mistakes : 0, hints: 0,
+    mistakes: saved ? saved.mistakes : 0, hints: 0, hpaid: saved ? saved.hpaid : [],
     time: saved ? saved.time : 0,
-    history: [], noteMode: false, done: false, started: false,
+    history: [], noteMode: saved ? saved.noteMode : false, done: false, started: false,
   };
   sel = -1; H = null; HC = null;
   $("gTitle").textContent = `整题 ${j + 1} · ${SE.LESSONS[k].name}`;   // 窄屏省略时先保住“整题几”
   $("gTier").textContent = "技巧练习 · 不限提示";
   show("game"); hideTip();
-  render(); renderHint();
+  render(); renderHint(); fitBoard();
   startTimer();
 }
 
 const gameKey = () => G.practice ? `pgame.${G.practice.k}.${G.practice.j}` : MODES[G.m].key + G.n;
 function save() {
   if (!G || G.done) return;
-  const blank = !G.time && !G.mistakes && !G.hints && G.val.every((v, i) => v === G.given[i]) && G.notes.every(x => !x);
+  const blank = !G.time && !G.mistakes && !G.hints && !G.noteMode && G.val.every((v, i) => v === G.given[i]) && G.notes.every(x => !x);
   if (blank) { store.del(gameKey()); return; }   // 什么都没做：不留存档
-  store.set(gameKey(), { p: G.practice ? G.practice.P.p : MODES[G.m].puzzles[G.n - 1].p, val: G.val, notes: G.notes, mistakes: G.mistakes, hints: G.hints, time: G.time, hsig: G.hsig || "" });
+  store.set(gameKey(), { p: G.practice ? G.practice.P.p : MODES[G.m].puzzles[G.n - 1].p, val: G.val, notes: G.notes, mistakes: G.mistakes, hints: G.hints, time: G.time, hsig: G.hsig || "", hpaid: G.hpaid || [], noteMode: !!G.noteMode });
 }
 function startTimer() {
   clearInterval(timer);
@@ -828,7 +905,7 @@ function startTimer() {
 const isWrong = i => G.val[i] && !G.given[i] && G.val[i] !== G.sol[i];
 
 function frameSets(f) {
-  const o = { zone: new Set(f ? f.zone : []), pat: new Set(f ? f.pat : []), tgt: new Set(f ? f.tgt : []), strike: {}, mark: {} };
+  const o = { zone: new Set(f ? f.zone : []), pat: new Set(f ? f.pat : []), tgt: new Set(f ? f.tgt : []), no: new Set(f && f.no ? f.no : []), strike: {}, mark: {} };
   if (f) { f.strike.forEach(([c, d]) => { o.strike[c] = (o.strike[c] || 0) | (1 << (d - 1)); });
            f.mark.forEach(([c, d]) => { o.mark[c] = (o.mark[c] || 0) | (1 << (d - 1)); }); }
   return o;
@@ -840,10 +917,18 @@ function render() {
     const c = cells[i], v = G.val[i];
     const ghost = hf && hf.f.place && hf.f.place[0] === i && (!v || isWrong(i)) ? hf.f.place[1] : 0;
     c.querySelector(".v").textContent = ghost || v || "";
-    // 讲解涉及的空格：临时显示推理用到的候选数
-    const useHintCand = hf && !v && (F.pat.has(i) || F.tgt.has(i) || F.strike[i] || F.mark[i]);
+    // 讲解时每个空格显示什么：
+    // - 没记笔记的：只有这一帧讲到它（高亮、标记、划掉）时才显示推理用到的候选数；“放不了”的斜线格不显示，免得白送答案
+    // - 记了笔记、整条讲解都没涉及它的：原样显示玩家的笔记
+    // - 记了笔记、讲解涉及它的：显示这一步的候选数（过期的数、前面几步划掉的数都不再显示，第 1 帧有说明）
+    // - 笔记漏了正确答案、讲解涉及它的：这一帧讲到它时按所有可能的数显示，否则只显示“笔记里、这一步还可能的数”，不多出数来
+    const inFrame = F.pat.has(i) || F.tgt.has(i) || F.strike[i] || F.mark[i];
     const ns = c.querySelector(".notes"); ns.style.display = (v || ghost) ? "none" : "";
-    const m = useHintCand ? hf.cand[i] : G.notes[i];
+    const m = !hf || v ? G.notes[i]
+      : !G.notes[i] ? (inFrame ? hf.cand[i] : 0)
+      : !H.inv.has(i) ? G.notes[i]
+      : !H.c0[i] ? (inFrame ? hf.cand[i] : G.notes[i] & hf.cand[i])
+      : hf.cand[i];
     ns.childNodes.forEach((s, k) => {
       const on = !v && (m >> k) & 1;
       s.textContent = on ? k + 1 : "";
@@ -854,24 +939,30 @@ function render() {
     c.classList.toggle("h-zone", F.zone.has(i));
     c.classList.toggle("h-pat", F.pat.has(i));
     c.classList.toggle("h-tgt", F.tgt.has(i));
+    c.classList.toggle("h-no", F.no.has(i));
     c.classList.toggle("h-ghost", !!ghost);
-    const zone = sel >= 0 && i !== sel && (GM.R(i) === GM.R(sel) || GM.C(i) === GM.C(sel) || GM.B(i) === GM.B(sel));
+    // 讲解时不画选中格的十字和相同数字（底色和讲解的高亮一样，会分不清讲解范围）
+    const zone = !hf && sel >= 0 && i !== sel && (GM.R(i) === GM.R(sel) || GM.C(i) === GM.C(sel) || GM.B(i) === GM.B(sel));
     c.classList.toggle("given", !!G.given[i]);
     c.classList.toggle("user", !G.given[i] && !!v);
     c.classList.toggle("wrong", settings.showErrors && isWrong(i));
-    c.classList.toggle("sel", i === sel);
+    c.classList.toggle("sel", !hf && i === sel);
     c.classList.toggle("zone", zone);
-    c.classList.toggle("same", settings.highlightSame && sv > 0 && v === sv && i !== sel);
+    c.classList.toggle("same", !hf && settings.highlightSame && sv > 0 && v === sv && i !== sel);
   }
   // 数字键剩余
   const cnt = Array(10).fill(0);
   for (let i = 0; i < GM.NN; i++) if (G.val[i] && (!settings.showErrors || !isWrong(i))) cnt[G.val[i]]++;
   pad.childNodes.forEach(k => {
-    const d = +k.dataset.d, left = GM.N - cnt[d];
-    k.classList.toggle("done", left <= 0);
+    const d = +k.dataset.d, left = GM.N - cnt[d], hide = settings.showErrors && !G.noteMode;
+    // 数到了：标出错误开着时（数的都是填对的）直接藏起来；关着时可能有填错的、笔记模式下可能要删残留的笔记，只变淡、照样能点
+    k.classList.toggle("done", left <= 0 && hide);
+    k.classList.toggle("used", left <= 0 && !hide);
     k.querySelector("small").textContent = left > 0 ? left : "";
   });
   pad.classList.toggle("notes-mode", G.noteMode);
+  pad.classList.toggle("dim", !!(HC || hf));
+  document.querySelector("#game .tools").classList.toggle("dim", !!(HC || hf));
   $("tNote").classList.toggle("on", G.noteMode);
   $("tNoteLbl").textContent = G.noteMode ? "笔记 开" : "笔记";
   $("tUndo").disabled = G.history.length === 0;
@@ -895,16 +986,25 @@ function snapshot() {
   if (G.history.length > 300) G.history.shift();
 }
 
-function input(d) {
+function input(d, tap) {
   if (!G || G.done) return;
+  if (HC || (H && H.open)) { closeHintPanel(true); return; }   // 提示面板开着（数字键是淡的）：这一下只关掉面板
   closeHintPanel();
   if (sel < 0) { toast("先选一个格子"); return; }
   const i = sel;
   if (G.given[i]) { toast("这是题目给的数字，不能改"); return; }
   if (G.noteMode) {
-    if (G.val[i]) { toast("这一格已经填了数字"); return; }
+    if (G.val[i]) {
+      toast(settings.showErrors && !isWrong(i) ? "这一格已经填对了"
+        : input.lp ? "这一格已经填了数字。长按是记笔记，要改数字就直接点数字键"
+        : "现在是笔记模式。要改这一格的数字，先点“笔记”关掉笔记模式");
+      return;
+    }
+    const nt = input.nt, now = performance.now();
+    if (tap && nt && nt.i === i && nt.d === d && nt.g === G && now - nt.t < 600) return;   // 老人双击：刚记上（删掉）的笔记不马上又删掉（加回来）
     snapshot();
     G.notes[i] ^= 1 << (d - 1);
+    input.nt = tap ? { i, d, t: now, g: G } : null;
   } else {
     if (G.val[i] === d) return;
     if (settings.showErrors && G.val[i] && !isWrong(i)) { toast("这一格已经填对了"); return; }   // 已填对的格子保持不变
@@ -918,72 +1018,130 @@ function input(d) {
 }
 
 function erase() {
-  if (!G || G.done || sel < 0) return;
+  if (!G || G.done) return;
+  if (HC || (H && H.open)) { closeHintPanel(true); return; }
+  if (sel < 0) { toast("先选一个格子"); return; }
   if (G.given[sel]) { toast("这是题目给的数字，不能改"); return; }
   closeHintPanel();
   if (settings.showErrors && G.val[sel] && !isWrong(sel)) { toast("这一格已经填对了"); return; }
   if (!G.val[sel] && !G.notes[sel]) return;
+  input.nt = null;   // 擦过之后再点数字是新的操作，不算双击
   snapshot();
   if (G.val[sel]) G.val[sel] = 0; else G.notes[sel] = 0;
   after();
 }
 
 function undo() {
+  // 面板开着、整页被推上去时：这一下只关掉面板（页面落回原位，按钮位置都变了，免得接着的第二下点到别处）
+  if (G && (HC || (H && H.open)) && shifted) { closeHintPanel(true); return; }
   const h = G && !G.done && G.history.pop(); if (!h) return;
-  closeHintPanel();
+  closeHintPanel(); input.nt = null;
   G.val = h.val; G.notes = h.notes; sel = h.sel; G.mistakes = h.mistakes;
   after(false);
 }
 
 
-// 讲解型提示：第一次点先讲推理（高亮 + 文字），一步步看完后再填入。一次完整讲解算用一次提示。
+// 讲解型提示：先确认“使用 1 次提示？”，再讲推理（高亮 + 文字），一步步看完后填入。讲同一格同一个数只扣一次。
 let H = null;
 let HC = null;   // 等待确认“使用提示”（防止误点）
+// 盘面上填错的格子（选中的那一格优先）。有填错的数时，按它推理会推出重复的数字，所以提示先帮忙改正它。
+function wrongCell() {
+  if (sel >= 0 && isWrong(sel)) return sel;
+  for (let i = 0; i < GM.NN; i++) if (isWrong(i)) return i;
+  return -1;
+}
+const cellName = i => `第 ${GM.R(i) + 1} 行第 ${GM.C(i) + 1} 列`;
+// 按现在的盘面和玩家自己的笔记推一条讲解链
+function chainNow() {
+  const v = G.val.map((x, i) => (x && !isWrong(i) ? x : 0));
+  // 按玩家自己的笔记来推理（不让人去删笔记里本来没有的数）；某一格的笔记漏了正确答案时，那一格不按笔记算
+  const c0 = v.map((x, i) => (!x && G.notes[i] && (G.notes[i] >> (G.sol[i] - 1)) & 1 ? G.notes[i] : 0));
+  let order;   // 填数类的技巧练习：整题的提示优先讲本课的方法
+  if (G.practice) { const L = SE.LESSONS[G.practice.k]; if (L.kind === "place") order = L.techs.concat(SE.HINT_ORDER.filter(t => L.techs.indexOf(t) < 0)); }
+  return { v, c0, r: (G.practice ? SE : MODES[G.m].eng).hintChain(v, 0, c0, order) };
+}
+// 推不下去时直接给答案的那一格：候选数最少的空格
+function stuckCell(v) {
+  let best = -1, bn = 99;
+  for (let j = 0; j < GM.NN; j++) {
+    if (v[j]) continue;
+    let m = GM.FULL; GM.PEERS[j].forEach(p => { if (v[p]) m &= ~(1 << (v[p] - 1)); });
+    let n = 0; for (let k = 0; k < GM.N; k++) n += (m >> k) & 1;
+    if (n < bn) { bn = n; best = j; }
+  }
+  return best;
+}
+// 这一局付过次数的提示目标：同一格同一个数只扣一次（改笔记换了格、再改回来也一样）
+const isPaid = t => (G.hpaid || []).some(x => x[0] === t[0] && x[1] === t[1]);
+const addPaid = t => { G.hpaid = (G.hpaid || []).filter(x => x[0] !== t[0] || x[1] !== t[1]).concat([[t[0], t[1]]]).slice(-100); };
 function hint() {
   if (!G || G.done) return;
   G.started = true; hideTip();
-  const wrongSel = sel >= 0 && isWrong(sel);
-  const sig = G.val.join("");
-  if (!wrongSel && H && H.sig === sig) { HC = null; H.open = true; render(); renderHint(); return; }   // 同一盘面再看一遍，不重复扣次数
-  if (!wrongSel && !G.practice && G.hsig === sig) { runHint(false, true); return; }   // 讲到一半 App 被关掉，重新打开后不重复扣
-  if (!G.practice && G.hints >= HINTS_PER_LEVEL) { toast("这一关的提示用完了"); return; }
-  if (G.practice) { runHint(wrongSel); return; }       // 整题练习不限次数，不用确认
+  const wc = wrongCell(), sig = G.val.join("");
+  // 同一盘面、同样的笔记：接着看刚才的讲解
+  if (wc < 0 && H && H.sig === sig && H.nsig === G.notes.join()) { HC = null; H.open = true; if (sel >= 0) H.sel0 = sel; sel = -1; render(); renderHint(); return; }
+  // 这次提示要讲（或改正）的是哪一格、哪个数。和上次付过次数的一样（关掉没填、填入后撤销、改了笔记、自己填了别的格子、App 重开），
+  // 就不再扣次数：玩家已经知道这个答案了。换了一格才算新的提示。
+  const c = wc < 0 ? chainNow() : null;
+  const tgt = wc >= 0 ? [wc, G.sol[wc]] : !c.r.stuck && c.r.place ? c.r.place : stuckCell(c.v) >= 0 ? [stuckCell(c.v), G.sol[stuckCell(c.v)]] : null;
+  const paid = tgt && (isPaid(tgt) || (!(G.hpaid || []).length && wc < 0 && !G.practice && G.hsig === sig));   // 3.2 的存档只记了盘面
+  if (paid) { runHint(wc, true, c); return; }
+  // 之前付过次数、还空着的那一格（玩家关掉讲解后自己去填了别的格子，引擎这次换了一格讲）：先免费把它填上，不再为新的一格扣次数
+  const owed = wc < 0 && (G.hpaid || []).find(x => !G.val[x[0]] && G.sol[x[0]] === x[1]);
+  if (owed) { H = null; HC = null; placeHint(owed[0], owed[1]); toast(`之前提示过的${cellName(owed[0])}，填 ${owed[1]}`); return; }
+  if (!G.practice && G.hints >= HINTS_PER_LEVEL) { toast(!settings.showErrors ? "这一关的提示用完了。在设置里打开“标出错误”，就能看到有没有填错的格子" : "这一关的提示用完了"); return; }
+  if (G.practice) { runHint(wc); return; }       // 整题练习不限次数，不用确认
   if (H) H.open = false;
-  HC = { wrongSel, left: HINTS_PER_LEVEL - G.hints };
+  HC = { wc, left: HINTS_PER_LEVEL - G.hints };
   render(); renderHint();
 }
-function runHint(wrongSel, free) {
+function runHint(wc, free, pre) {
   HC = null;
-  // 选中的格子填错了：直接改正
-  if (wrongSel) {
-    if (G.practice) G.practiceHints = (G.practiceHints || 0) + 1; else G.hints++;
-    H = null; placeHint(sel, G.sol[sel]); toast("这一格填错了，已改成正确的数字"); return;
+  const charge = () => { if (free) return; if (G.practice) G.practiceHints = (G.practiceHints || 0) + 1; else G.hints++; };
+  // 有填错的格子：直接改正
+  if (wc >= 0) {
+    const was = sel === wc;
+    charge(); H = null; addPaid([wc, G.sol[wc]]); placeHint(wc, G.sol[wc]);
+    toast(was ? "这一格填错了，已改成正确的数字" : cellName(wc) + "填错了，已改成正确的数字"); return;
   }
   const sig = G.val.join("");
-  const v = G.val.map((x, i) => (x && !isWrong(i) ? x : 0));
-  const r = (G.practice ? SE : MODES[G.m].eng).hintChain(v);
-  if (G.practice) G.practiceHints = (G.practiceHints || 0) + 1; else if (!free) G.hints++;
+  const c = pre || chainNow(), v = c.v, r = c.r;
+  charge();
   if (r.stuck || !r.place) {
-    let best = -1, bn = 10;
-    for (let j = 0; j < GM.NN; j++) {
-      if (v[j]) continue;
-      let m = GM.FULL; GM.PEERS[j].forEach(p => { if (v[p]) m &= ~(1 << (v[p] - 1)); });
-      let n = 0; for (let k = 0; k < GM.N; k++) n += (m >> k) & 1;
-      if (n < bn) { bn = n; best = j; }
-    }
-    H = null; if (best >= 0) placeHint(best, G.sol[best]);
+    const best = stuckCell(v);
+    H = null; if (best >= 0) { addPaid([best, G.sol[best]]); placeHint(best, G.sol[best]); }
     toast("这一步需要更复杂的推理，直接告诉你答案"); return;
   }
   const list = [];
-  r.steps.forEach((st, si) => st.frames.forEach(f => list.push({ f, si, cand: st.cand })));
-  H = { sig, steps: r.steps, list, i: 0, place: r.place, open: true };
-  G.hsig = sig;
+  r.steps.forEach((st, si) => st.frames.forEach(f => list.push({ f: Object.assign({}, f), si, cand: st.cand })));
+  // 讲解里用到的格子：笔记漏了正确答案的，说明这一格是按所有可能的数来算的；没记笔记却要“划掉”的，说明记住就行
+  const uses = (f, j) => f.pat.indexOf(j) >= 0 || f.tgt.indexOf(j) >= 0 || f.no.indexOf(j) >= 0 || f.strike.some(x => x[0] === j) || f.mark.some(x => x[0] === j) || (f.place && f.place[0] === j);
+  const basic = (G.practice ? SE : MODES[G.m].eng).basicCands(v);
+  const inv = new Set();   // 整条讲解涉及的格子（任何一帧的范围、高亮、斜线、标记、划掉、填入）
+  list.forEach(({ f }) => { [...f.zone, ...f.pat, ...f.tgt, ...f.no, ...f.strike.map(x => x[0]), ...f.mark.map(x => x[0])].forEach(x => inv.add(x)); if (f.place) inv.add(f.place[0]); });
+  const lost = [];
+  for (let j = 0; j < GM.NN; j++) if (!v[j] && G.notes[j] && !c.c0[j] && inv.has(j)) lost.push(j);
+  if (lost.length) {   // 说明统一放在第一帧
+    const it = list[0];
+    it.f.text += `（${lost.slice(0, 2).map(cellName).join("、")}${lost.length > 2 ? "等格子" : ""}的笔记里漏了正确答案，讲解时${lost.length > 1 ? "这些格子" : "这一格"}不按笔记算。）`;
+  }
+  // 讲解用到的格子，笔记里有同行、列、宫已经填过的数：讲解时不算它们，说一声，免得和玩家的笔记对不上
+  const stale = [];
+  for (let j = 0; j < GM.NN; j++) if (!v[j] && c.c0[j] && (G.notes[j] & ~basic[j]) && inv.has(j)) stale.push(j);
+  if (stale.length) list[0].f.text += `（${stale.slice(0, 2).map(j => cellName(j) + "笔记里的 " + GM.digits.filter(d => (G.notes[j] & ~basic[j]) >> (d - 1) & 1).join("、")).join("，")}${stale.length > 2 ? " 等" : " "}已经在同一行、列或宫里填过了，讲解时不算。）`;
+  const bare = list.find(it => it.f.strike.some(x => !G.notes[x[0]]));
+  if (bare && G.notes.some(x => x)) bare.f.text += "（没记笔记的格子不用真的去划，记住它不能是这个数就行。）";
+  H = { sig, nsig: G.notes.join(), steps: r.steps, list, i: 0, place: r.place, open: true, sel0: sel, c0: c.c0, inv };
+  G.hsig = sig; addPaid(r.place);
+  sel = -1;   // 讲解时不留选中格，免得接着点数字键填到看不见的格子里
   save(); render(); renderHint();
 }
-function placeHint(i, d) {
+function placeHint(i, d, elim) {
   snapshot();
   G.val[i] = d; G.notes[i] = 0;
   if (settings.autoClean) GM.PEERS[i].forEach(p => { G.notes[p] &= ~(1 << (d - 1)); });
+  // 讲解里划掉的候选数，也从玩家的笔记里划掉（撤销时一起恢复），免得下次卡住时再讲一遍同样的推理
+  (elim || []).forEach(([c, x]) => { if (!G.val[c]) G.notes[c] &= ~(1 << (x - 1)); });
   sel = i; H = null; renderHint();
   cells[i].classList.remove("flash"); void cells[i].offsetWidth; cells[i].classList.add("flash");
   after();
@@ -992,65 +1150,152 @@ function renderHint() {
   const p = $("hpanel");
   if (HC) {
     $("hpStep").textContent = "提示";
-    $("hpText").textContent = !HC.wrongSel ? `使用 1 次提示？本关还剩 ${HC.left} 次。提示会先讲清楚思路，看完再填入。`
-      : settings.showErrors ? `选中的这一格填错了。用 1 次提示把它改正？本关还剩 ${HC.left} 次。`
-      : `使用 1 次提示，直接给出选中这一格的答案？本关还剩 ${HC.left} 次。`;   // 关掉“标出错误”时不先说它填错了
+    const left = `本关还剩 ${HC.left} 次` + (G.hints === 0 ? "，用了提示最多得 2 星。" : G.hints === 1 ? "，再用一次最多得 1 星。" : "。");
+    // 关掉“标出错误”时，确认框不透露盘面上有没有填错（否则点提示再取消就能免费查对错）
+    $("hpText").textContent = HC.wc < 0 || !settings.showErrors ? `使用 1 次提示？${left}`
+      + (settings.showErrors ? "提示会先讲清楚思路，看完再填入。" : "如果盘面上有不对的数，会先帮你改正；没有的话先讲清楚思路，看完再填入。")
+      : HC.wc === sel ? `选中的这一格填错了。用 1 次提示改正它？${left}`
+      : `${cellName(HC.wc)}（标红的格子）填错了，得先改正。用 1 次提示改正它？${left}也可以自己擦掉它。`;
     $("hpClose").textContent = "取消"; $("hpPrev").hidden = true;
     $("hpNext").textContent = "使用提示";
     p.classList.add("on"); fitHint(); return;
   }
   $("hpClose").textContent = "关闭"; $("hpPrev").hidden = false;
-  if (!H || !H.open) { p.classList.remove("on"); return; }
+  if (!H || !H.open) { p.classList.remove("on"); unshift(); return; }
   const it = H.list[H.i], st = H.steps[it.si];
-  $("hpStep").textContent = (H.steps.length > 1 ? `第 ${it.si + 1} 步，共 ${H.steps.length} 步 · ` : "") + SE.TECH_NAME[st.inst.t];
-  $("hpText").textContent = it.f.text;
+  $("hpStep").textContent = wj((H.steps.length > 1 ? `第 ${it.si + 1} 步，共 ${H.steps.length} 步 · ` : "") + SE.TECH_NAME[st.inst.t]);
+  $("hpText").textContent = wj(it.f.text);
   $("hpPrev").disabled = H.i === 0;
   const last = H.i === H.list.length - 1;
   $("hpNext").textContent = last ? `填入 ${H.place[1]}` : "下一步";
   p.classList.add("on"); fitHint();
 }
 // 小屏手机（特别是大字模式）上讲解文字很长时，面板会盖住棋盘最下面几行：把文字区压矮，改成可以滑动
-function fitHint() { fitPanel($("hpanel"), $("hpText"), $("hpMore")); }
-function fitPanel(p, t, more) {
-  t.style.maxHeight = ""; t.scrollTop = 0; more.classList.remove("on"); p.classList.remove("tight");
-  if (!p.classList.contains("on") || !$("game").classList.contains("on")) return;
+function fitHint() {
+  const t = $("hpText");
+  if (H && H.open && !HC && !shifted) {   // 按整条讲解里最长的一帧决定推不推，翻页时棋盘不动
+    const cur = t.textContent; t.textContent = wj(H.list.reduce((a, x) => x.f.text.length > a.length ? x.f.text : a, ""));
+    fitPanel($("hpanel"), t, $("hpMore"), false); t.textContent = cur;
+  }
+  fitPanel($("hpanel"), t, $("hpMore"), !!(HC && HC.wc < 0));   // 改错的确认框不盖棋盘：要让玩家看到它说的那一格
+}   // 改错的确认框不盖棋盘：要让玩家看到它说的那一格
+const gwrap = $("game").querySelector(".wrap");
+// 面板都关了：棋盘回到原位
+let shifted = 0;   // 面板开着期间整页上推的距离：一旦推了就保持到面板全关，翻页时棋盘不上下跳
+let dropAt = -1e9;   // 页面落回原位的时间
+function unshift() {
+  if ($("hpanel").classList.contains("on") || $("tipPanel").classList.contains("on")) return;
+  if (shifted) dropAt = performance.now();
+  gwrap.style.transform = ""; shifted = 0;
+}
+// 页面落回原位后，所有按钮和格子都换了位置：600ms 内的真实点击不算（包括关掉面板的那一下随后的 click、老人的双击第二下）
+["pointerdown", "click"].forEach(ev => document.addEventListener(ev, e => {
+  if (e.isTrusted && performance.now() - dropAt < 650) { e.stopPropagation(); e.preventDefault(); }
+}, true));
+// cover：确认框、难度提醒这类不用看棋盘的面板，可以盖住棋盘下面几行，文字尽量全露出来
+function fitPanel(p, t, more, cover) {
+  t.style.maxHeight = ""; t.style.minHeight = ""; t.scrollTop = 0; more.classList.remove("on", "show"); p.classList.remove("tight");
+  if (!p.classList.contains("on") || !$("game").classList.contains("on")) { unshift(); return; }
+  gwrap.style.transform = "";
+  const keep = shifted; shifted = 0;
+  const pr = p.firstElementChild.getBoundingClientRect(), br = board.getBoundingClientRect();
+  if (pr.right <= br.left || pr.left >= br.right) { more.classList.toggle("on", t.scrollHeight > t.clientHeight + 2); return; }   // 横屏：面板在棋盘旁边，不会盖住
+  more.classList.add("show");   // “往上滑看全部”在步骤标题那一行：先把位置占上再量（窄屏时它会单占一行）
   const over = () => board.getBoundingClientRect().bottom + 4 - p.getBoundingClientRect().top;   // 用外层定位（内层有入场动画位移）
+  // 小屏放不下全文时，把整页往上推：顶栏和统计行整个推出屏幕（看讲解时用不到，不露半截），棋盘完整留在屏幕上，文字能多露几行
+  if (cover) t.style.maxHeight = Math.floor(window.innerHeight * 0.6) + "px";   // 不用看棋盘的面板：文字尽量全露出来
+  const lh0 = parseFloat(getComputedStyle(t).lineHeight) || 24;
+  // 只差不到一行时不推，下面截掉一行就行
+  if (!cover && (keep || over() > lh0 * 1.2)) { shifted = Math.max(0, Math.floor(board.getBoundingClientRect().top - 4)); if (shifted) gwrap.style.transform = `translateY(${-shifted}px)`; }
   const lh = parseFloat(getComputedStyle(t).lineHeight) || 24;
+  if (cover) {
+    // 面板上沿别正好切过统计行或顶栏、留下半截字：切到了就把面板加高，整行盖住
+    t.style.minHeight = "";
+    [$("gStats"), gwrap.querySelector(".bar")].forEach(el => {
+      const r = el.getBoundingClientRect(), top = p.firstElementChild.getBoundingClientRect().top;
+      if (r.height && top > r.top && top < r.bottom && r.top > 4) t.style.minHeight = (t.getBoundingClientRect().height + top - r.top + 2) + "px";
+    });
+    const need = t.scrollHeight > t.clientHeight + 2; more.classList.toggle("on", need); more.classList.toggle("show", need); return;
+  }
   const clamp = min => { const o = over(); if (o > 0) t.style.maxHeight = Math.max(min, Math.floor((t.getBoundingClientRect().height - o) / lh)) * lh + "px"; };   // 按整行截，不露半行字
   clamp(2);
   if (over() > 0) { p.classList.add("tight"); clamp(1); }   // 还盖得住：按钮和边距再收紧，文字最少留 1 行
-  more.classList.toggle("on", t.scrollHeight > t.clientHeight + 2);
+  const need = t.scrollHeight > t.clientHeight + 2;
+  more.classList.toggle("on", need); more.classList.toggle("show", need);
 }
 [["hpText", "hpMore"], ["tipText", "tipMore"]].forEach(([a, b]) => $(a).addEventListener("scroll", () => scrollCue($(a), $(b))));
-const fitTip = () => fitPanel($("tipPanel"), $("tipText"), $("tipMore"));
-window.addEventListener("resize", () => { if ($("hpanel").classList.contains("on")) fitHint(); if ($("tipPanel").classList.contains("on")) fitTip(); });
-function closeHintPanel() {
+const fitTip = () => fitPanel($("tipPanel"), $("tipText"), $("tipMore"), true);
+window.addEventListener("resize", () => { fitBoard(); fitLesson(); if ($("hpanel").classList.contains("on")) fitHint(); if ($("tipPanel").classList.contains("on")) fitTip(); });
+// 竖屏时按屏幕实际剩下的高度定棋盘大小：顶栏、统计行、工具按钮、数字键的高度随大字模式、6×6（一排键）、屏幕高度变化，CSS 公式总有对不上的尺寸
+const outerH = el => { const m = getComputedStyle(el); return m.display === "none" ? 0 : el.getBoundingClientRect().height + parseFloat(m.marginTop) + parseFloat(m.marginBottom); };
+const padY = el => { const m = getComputedStyle(el); return parseFloat(m.paddingTop) + parseFloat(m.paddingBottom); };
+const noAr = () => document.documentElement.classList.contains("no-ar");
+function fitBoard() {
+  board.style.width = board.style.height = "";
+  const g = $("game").classList; g.remove("squeeze", "sq1");
+  if (!g.contains("on") || getComputedStyle(gwrap).display === "grid") return;   // 横屏布局由 CSS 管
+  const room = () => {   // 按现在的样式，棋盘能有多大
+    let used = padY($("game"));
+    [...gwrap.children].forEach(el => { if (el !== board) used += outerH(el); });
+    return Math.floor(Math.min(gwrap.clientWidth, window.innerHeight - used - 1));
+  };
+  let w = room();
+  if (settings.large && w < gwrap.clientWidth) {
+    // 大字模式棋盘被高度卡小了：和普通模式在这块屏上的棋盘比，比它小才把按键分两档压一压，压到不比它小为止
+    const R = document.documentElement.classList; R.remove("large"); const wn = room(); R.add("large");
+    for (const lv of ["sq1", "squeeze"]) { if (w >= wn) break; g.remove("sq1"); g.add(lv); w = room(); }
+  }
+  if (w > 120) { board.style.width = w + "px"; if (noAr()) board.style.height = w + "px"; }
+}
+// 技巧练习页：说明框固定用满剩下的高度（讲解时没有数字键，下面不再空着一大片），也不把按钮挤出屏幕
+function fitLesson() {
+  const tp = $("tPanel"); tp.style.maxHeight = tp.style.height = "";
+  const lw = $("lesson").querySelector(".wrap");
+  if (!$("lesson").classList.contains("on")) { scrollCue(tp, $("tMore")); return; }
+  const grid = getComputedStyle(lw).display === "grid";   // 横屏：棋盘在左栏，不算
+  let used = padY($("lesson"));
+  [...lw.children].forEach(el => { if (grid && el === tboard) return; used += el === tp ? outerH(tp) - tp.getBoundingClientRect().height : outerH(el); });
+  const avail = Math.floor(window.innerHeight - used - 1), min = parseFloat(getComputedStyle(tp).minHeight) || 0;
+  tp.style.height = tp.style.maxHeight = Math.max(min, avail) + "px";   // 固定高度：文字长短不同时，下面的按钮和数字键不跟着上下动
+  scrollCue(tp, $("tMore"));
+}
+// back：用户主动关掉（“关闭”按钮、返回键、点数字键/擦除/方向键/“笔记”/N 键/撤销）时，回到点提示之前选中的格子
+function closeHintPanel(back) {
   const was = HC || (H && H.open);
+  if (back && H && H.open && sel < 0 && H.sel0 >= 0) sel = H.sel0;
   HC = null; if (H) H.open = false;
   if (was) { renderHint(); if (G) render(); }
 }
-$("hpClose").onclick = closeHintPanel;
+$("hpClose").onclick = () => closeHintPanel(true);
 $("hpPrev").onclick = () => { if (H && H.i > 0) { H.i--; render(); renderHint(); } };
 let hcAt = 0;   // 点“使用提示”的时间：双击时第二下会落在同一位置的“下一步”上
 $("hpNext").onclick = e => {
-  if (HC) { hcAt = performance.now(); runHint(HC.wrongSel); return; }
-  if (e && e.detail && performance.now() - hcAt < 400) return;
+  if (HC) { hcAt = performance.now(); runHint(HC.wc); return; }
+  if (e && e.detail && performance.now() - hcAt < 600) return;   // 老人的慢速双击可以到 600ms
   if (!H) return;
   if (H.i < H.list.length - 1) { H.i++; render(); renderHint(); }
-  else placeHint(H.place[0], H.place[1]);
+  else { sel = H.sel0; placeHint(H.place[0], H.place[1], [].concat(...H.steps.map(st => st.inst.elim || []))); }   // 撤销时回到点提示之前选中的格子
 };
 
+// “X-Wing”这类名字在连字符后面不断行（大字窄屏时“X-”和“Wing”会被拆成两行）
+const wj = s => String(s).replace(/-Wing/g, "-\u2060Wing");
 // 新难度段提醒
 const TIER_TIPS = {
-  1: "第 1–20 关只用到唯一候选数和宫内排除。第一次玩的话，可以先花一分钟看看这两种方法。",
+  1: () => "每一行、每一列、每个宫（粗线围出来的 3×3 小方块）里，1 到 9 都要各有一个。先点一个空格，再点下面的数字填进去。数字键上的小数字是这个数还剩几个没填；"
+    + (settings.large ? "点“笔记”按钮，可以在格子里记下这一格可能的数。" : "长按数字键可以在格子里记下这一格可能的数。")
+    + "不知道怎么推的时候，可以点“先去学习”，看看最基本的两种解法。",
   21: "从这一段开始会用到行列排除。",
-  46: "从这一段开始需要区块排除和数对，记得用笔记写下候选数。",
-  71: "这一段会用到三数组和 X-Wing。",
+  46: "从这一段开始会用到区块排除，后面几关还会用到数对，记得用笔记写下候选数。",
+  71: "这一段会用到 X-Wing 和三数组。",
   91: "最后 10 关每关都要用到 XY-Wing 或 XYZ-Wing 这类“钳子”方法，可以先去技巧练习里看看。",
+};
+const TIPS6 = {
+  1: () => "6×6 只用 1 到 6 这六个数字：每一行、每一列、每个宫（粗线围出来的 2×3 小方块）里，1 到 6 都要各有一个。先点一个空格，再点下面的数字填进去。数字键上的小数字是这个数还剩几个没填；"
+    + (settings.large ? "点“笔记”按钮，可以在格子里记下这一格可能的数。" : "长按数字键可以在格子里记下这一格可能的数。"),
 };
 // 防双击“穿透”：老人常常双击。第一下点完后界面变了（弹层开关、切屏、按钮换了意思），第二下就会点到同一位置的别的东西上。
 // 规则：真实点击后，落在第一下同一位置（40px 内，或者落在第一下那个点上现在的那个控件上）的下一下，按第一下造成的变化分别拦一段时间：
-//   换了屏幕 750ms；落在第一下之后才弹出来的弹层里 650ms；第一下点的是弹层里的按钮、弹层已关掉 650ms；
+//   换了屏幕 750ms；落在第一下之后才弹出来的弹层里 650ms；第一下点在弹层里（按钮或背景）、弹层已关掉 650ms；
 //   技巧练习换了题/进出讲解、或者大字模式切换导致整页重排 650ms；同一个按钮换了意思（“下一步”变成“填入”）400ms。
 // 界面没变时照常（例如连点相邻的数字键、相邻的格子、连点“下一步”“撤销”，或者提示面板开着时连点撤销）。
 // 安卓系统认定“双击”的间隔是 300ms，老人的慢速双击大约到 600ms；再慢的就当作两次有意的点击。
@@ -1087,21 +1332,35 @@ document.addEventListener("click", e => {
 // 双击关卡块时，第二下会落在刚打开的棋盘上：记住打开关卡的那一下在哪儿，紧跟着在同一位置的点击不关提醒
 let lastDown = null, tipFrom = null;
 document.addEventListener("pointerdown", e => { lastDown = { x: e.clientX, y: e.clientY, t: performance.now(), el: e.target }; }, true);
-function showTip(text) {
-  $("tipText").textContent = text; $("tipPanel").classList.add("on"); fitTip();
+let tipSrc = null;
+let tipKey = null;   // 这条提醒关掉时才记成“看过”
+function showTip(text, learn = true, title = "新的难度") {
+  tipSrc = text;
+  $("tipStep").textContent = title;
+  $("tipGo").hidden = !learn; $("tipClose").textContent = learn ? "直接开始" : "知道了";   // 技巧练习只有 9×9
+  $("tipText").textContent = wj(typeof text === "function" ? text() : text); $("tipPanel").classList.add("on"); pad.classList.add("tipdim"); fitTip();
   const el = lastDown && lastDown.el && lastDown.el.closest ? lastDown.el.closest(".lv, #continueBtn, #winNext") : null;   // 只认“打开关卡”的那一下
   tipFrom = el && performance.now() - lastDown.t < 700 ? lastDown : null;
   if (tipFrom) lastTap = { x: tipFrom.x, y: tipFrom.y, t: performance.now(), el: null, txt: "", scr: "", np: "-", from: "", vk: "", rect: lastTap && lastTap.t >= tipFrom.t - 50 ? lastTap.rect : null };   // 双击关卡块时第二下什么都不点
 }
-function hideTip() { $("tipPanel").classList.remove("on"); }
+function hideTip() { if (tipKey && $("tipPanel").classList.contains("on")) store.set(tipKey, true); tipKey = null; $("tipPanel").classList.remove("on"); pad.classList.remove("tipdim"); unshift(); }
 $("tipClose").onclick = hideTip;
-$("tipGo").onclick = () => { hideTip(); goHome(); openTech(); };
+const TIP_LESSON = { 1: 0, 21: 2, 46: 3, 71: 5, 91: 7 };   // 难度提醒“先去学习”打开这一段要用的课
+$("tipGo").onclick = () => {
+  const k = G && TIP_LESSON[G.n]; hideTip(); goHome(); openTech();
+  const c = k != null && document.querySelectorAll("#lessonList .lcard")[k]; if (c) c.scrollIntoView({ block: "start" });
+};
 
 function after(check = true) {
   render(); save();
   if (!check) return;
   if (G.val.every((v, i) => v === G.sol[i])) win();
-  else if (G.val.every(v => v)) toast("盘面填满了，但还有错误");
+  else if (G.val.every(v => v)) {
+    const w = wrongCell(), canHint = G.practice || G.hints < HINTS_PER_LEVEL || isPaid([w, G.sol[w]]);
+    toast(settings.showErrors ? "盘面填满了，但还有错误（标红的格子）"
+      : canHint ? "盘面填满了，但还有错误。可以点提示改正，或在设置里打开“标出错误”看是哪一格"
+      : "盘面填满了，但还有错误。在设置里打开“标出错误”就能看到是哪一格");
+  }
 }
 
 function win() {
@@ -1111,17 +1370,17 @@ function win() {
   const MD = MODES[G.m];
   store.del(MD.cur);
   const stars = G.hints === 0 ? 3 : G.hints === 1 ? 2 : 1;
-  const first = !progress.stars[G.n];
+  const first = !progress.stars[G.n], prev = progress.stars[G.n] || 0;
   progress.stars[G.n] = Math.max(progress.stars[G.n] || 0, stars);
   progress.best[G.n] = progress.best[G.n] == null ? G.time : Math.min(progress.best[G.n], G.time);
   store.set(MD.prog, progress);
   sel = -1; render();
-  $("winTitle").textContent = G.n === MD.puzzles.length ? `全部 ${MD.puzzles.length} 关完成` : `${MD.title}第 ${G.n} 关完成`;
+  $("winTitle").textContent = G.n === MD.puzzles.length && first ? `${MD.title}全部 ${MD.puzzles.length} 关完成` : `${MD.title}第 ${G.n} 关完成`;
   $("winStars").innerHTML = [1, 2, 3].map(k => starSvg(k <= stars)).join("");
   $("winTime").textContent = fmt(G.time); winGrid();
   $("winErr").textContent = G.mistakes;
   $("winHint").textContent = G.hints;
-  $("winTip").textContent = stars < 3 ? (progress.stars[G.n] === 3 ? "这次用了提示，之前的三星成绩保留" : "不用提示通关可得三星")
+  $("winTip").textContent = stars < prev ? `这次 ${stars} 星，之前的 ${prev} 星成绩保留` : stars < 3 ? "不用提示通关可得三星"
     : (first || !settings.showTimer ? "没用提示，三星通关" : `最佳用时 ${fmt(progress.best[G.n])}`);
   $("winNext").style.display = G.n < MD.puzzles.length ? "" : "none";
   $("winHome").textContent = "返回关卡"; $("winNext").textContent = "下一关"; $("winHintLabel").textContent = "提示";
@@ -1134,9 +1393,11 @@ function showWin() { document.querySelectorAll(".sheet-bg.on").forEach(b => clos
 const winFresh = e => e && e.detail && performance.now() - winAt < 450;   // 按钮淡入的这段时间不响应
 let lastWon = 0, lastPractice = null;
 // 关掉“显示计时”时，通关面板也不显示用时
+// 关掉“标出错误”时不计错，错误一栏也不显示（显示 0 会误导）
 function winGrid() {
   $("winTime").parentNode.hidden = !settings.showTimer;
-  document.querySelector(".win-grid").style.gridTemplateColumns = `repeat(${settings.showTimer ? 3 : 2}, 1fr)`;
+  $("winErr").parentNode.hidden = !settings.showErrors;
+  document.querySelector(".win-grid").style.gridTemplateColumns = `repeat(${1 + settings.showTimer + settings.showErrors}, 1fr)`;
 }
 function practiceWin() {
   const { k, j } = G.practice, id = SE.LESSONS[k].id;
@@ -1181,7 +1442,7 @@ else { board.addEventListener("touchstart", pickCell, { passive: true }); board.
 let LP = null;   // 长按数字键
 function longPress(d) {
   if (!G || G.done) return;
-  G.noteMode = !G.noteMode; input(d); G.noteMode = !G.noteMode; render();
+  G.noteMode = !G.noteMode; input.lp = true; input(d); input.lp = false; G.noteMode = !G.noteMode; render(); save();   // 存档里记的是原来的笔记模式
   try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
 }
 pad.addEventListener("pointerdown", e => {
@@ -1196,11 +1457,11 @@ pad.addEventListener("click", e => {
   const k = e.target.closest(".key"); if (!k) return;
   if (LP && LP.fired && LP.k === k) { LP = null; k.blur(); return; }   // 长按已经处理过了
   LP = null;
-  input(+k.dataset.d); if (e.detail) k.blur();
+  input(+k.dataset.d, e.detail > 0); if (e.detail) k.blur();
 });
 $("tUndo").onclick = undo;
 $("tErase").onclick = erase;
-$("tNote").onclick = () => { G.noteMode = !G.noteMode; closeHintPanel(); render(); };
+$("tNote").onclick = () => { G.noteMode = !G.noteMode; closeHintPanel(true); render(); save(); };
 $("tHint").onclick = hint;
 document.querySelector(".tools").addEventListener("click", e => { const b = e.target.closest(".tool"); if (b && e.detail) b.blur(); });
 $("backBtn").onclick = goHome;
@@ -1210,10 +1471,11 @@ document.addEventListener("keydown", e => {
   if (!G || !$("game").classList.contains("on") || document.querySelector(".sheet-bg.on")) return;
   if (e.key >= "1" && e.key <= "9") { if (+e.key <= GM.N) input(+e.key); }
   else if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") erase();
-  else if (e.key === "n" || e.key === "N") { G.noteMode = !G.noteMode; closeHintPanel(); render(); }
-  else if ((e.ctrlKey || e.metaKey) && e.key === "z") undo();
+  else if (e.key === "n" || e.key === "N") { G.noteMode = !G.noteMode; closeHintPanel(true); render(); save(); }
+  else if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) undo();
   else if (e.key.startsWith("Arrow")) {
-    G.started = true; hideTip(); closeHintPanel();
+    G.started = true; hideTip();
+    if (HC || (H && H.open)) { closeHintPanel(true); e.preventDefault(); return; }   // 讲解开着：这一下只关掉，回到原来的格子
     if (sel < 0) sel = 0;
     else {
       const r = GM.R(sel), c = GM.C(sel), N = GM.N;
@@ -1232,38 +1494,51 @@ function renderSettings() { document.querySelectorAll(".switch").forEach(s => s.
 document.querySelectorAll(".switch").forEach(s => s.onclick = () => {
   settings[s.dataset.key] = !settings[s.dataset.key]; store.set("settings", settings);
   if (s.dataset.key === "large") { store.set("largeTouched", true); LG++; }   // 亲手开关过大字模式：以后不再自动打开
-  renderSettings(); applyLarge(); scrollCue($("setBody"), $("setMore"));   // 字号变了，设置面板是否需要滑动也变了
+  renderSettings(); applyLarge(); fitBoard(); scrollCue($("setBody"), $("setMore"));   // 字号变了，设置面板是否需要滑动也变了
+  if ($("tipPanel").classList.contains("on") && typeof tipSrc === "function") $("tipText").textContent = wj(tipSrc());   // 第 1 关提醒里“长按/笔记按钮”跟着大字模式变
   if (G) { render(); renderHint(); fitTip(); } else renderHome();   // renderHint 会按新字号重新贴合讲解面板
   if (T && $("lesson").classList.contains("on")) renderT();
 });
+$("setSheet").addEventListener("click", e => {
+  const r = e.target.closest && e.target.closest(".set-row");
+  if (e.detail && r && r.querySelector("[data-key=large]") && performance.now() - setAt < 1000) { e.stopPropagation(); e.preventDefault(); }
+}, true);
 document.querySelectorAll(".set-row").forEach(r => r.addEventListener("click", e => {
   const sw = r.querySelector(".switch"); if (sw && !e.target.closest(".switch")) sw.click();   // 点标题和说明文字也能开关，老人不用瞄准小开关
 }));
 $("openSettings").onclick = () => { renderSettings(); $("restartBtn").hidden = true; openSheet("setSheet"); };
-$("openSettings2").onclick = () => { renderSettings(); $("restartBtn").hidden = !(G && !G.done); openSheet("setSheet"); };
+$("openSettings2").onclick = () => { renderSettings(); $("restartBtn").hidden = !(G && !G.done); $("restartBtn").textContent = G && G.practice ? "重新开始这一题" : "重新开始这一关"; openSheet("setSheet"); };
 $("restartBtn").onclick = () => {
   closeSheet("setSheet");
   if (!G || G.done) return;
-  confirmBox("重新开始这一关？", "盘面会恢复成刚开始的样子，用时、错误和提示次数都清零。", "重新开始", () => {
+  confirmBox(G.practice ? "重新开始这一题？" : "重新开始这一关？", G.practice ? "盘面会恢复成刚开始的样子，用时和错误都清零。" : "盘面会恢复成刚开始的样子，用时、错误和提示次数都清零。", "重新开始", () => {
     if (!G) return;
     const pr = G.practice, n = G.n;
     store.del(gameKey()); G.done = true;
+    tipKey = null;   // 提醒开着时重新开始：不算看过，重开后照样出现
     if (pr) startPractice(pr.k, pr.j); else startLevel(n);
     toast("已重新开始");
   });
 };
+// 设置里随时可以再看一遍“怎么玩”（第 1 关的说明点过“直接开始”就不再自动出现）
+$("howBtn").onclick = () => {
+  closeSheet("setSheet");
+  const six = G ? G.m === 6 && !G.practice : HM === 6;
+  confirmBox("怎么玩", wj((six ? TIPS6 : TIER_TIPS)[1]()), "知道了", () => {}, true);
+};
 $("setClose").onclick = $("setDone").onclick = () => closeSheet("setSheet");
 $("resetBtn").onclick = () => {
   closeSheet("setSheet");
-  confirmBox("清除全部进度？", "所有关卡的星级、最佳用时、未完成的对局和技巧练习记录都会被删除，无法恢复。", "清除", () => {
+  confirmBox("清除全部进度？", "所有关卡的星级、最佳用时、未完成的对局和技巧练习记录都会被删除，无法恢复。设置不变。", "清除", () => {
     for (let n = 1; n <= 100; n++) { store.del("game." + n); store.del("tip." + n); store.del("game6." + n); }
+    store.del("tip6.1");
     store.del("current"); store.del("current6");
     store.del("progress6"); PROG[6] = { stars: {}, best: {} };
     SE.LESSONS.forEach((L, k) => { store.del(`pgame.${k}.0`); store.del(`pgame.${k}.1`); });
     store.del("practice"); practice = loadPractice();
     PROG[9] = { stars: {}, best: {} }; store.set("progress", PROG[9]); progress = PROG[HM];
     store.del("curPractice");
-    H = null; HC = null; renderHint(); hideTip(); sel = -1;
+    H = null; HC = null; renderHint(); tipKey = null; hideTip(); sel = -1;
     if (G) { G = null; clearInterval(timer); }
     homeY = 0; renderHome(); show("home"); toast("进度已清除");
   });
@@ -1279,8 +1554,8 @@ function renderTech() {
     const dn = Object.values(practice.drills[L.id]).filter(v => v === 1).length;
     const fn = Object.keys(practice.full[L.id]).length;
     const seen = !!practice.seen[L.id];
-    return `<div class="lcard"><div class="lcard-head"><span class="lcard-num">${k + 1}</span><span class="lcard-name">${L.name}</span><span class="lcard-tier">${L.tier}</span></div>
-      <div class="lcard-short">${L.short}</div>
+    return `<div class="lcard"><div class="lcard-head"><span class="lcard-num">${k + 1}</span><span class="lcard-name">${wj(L.name)}</span><span class="lcard-tier">${L.tier}</span></div>
+      <div class="lcard-short">${wj(L.short)}</div>
       <div class="lcard-btns">
         <button class="lbtn${seen ? " done" : ""}" data-a="teach" data-l="${k}">讲解<small>${seen ? "已看过" : "未看"}</small></button>
         <button class="lbtn${dn === 10 ? " done" : ""}" data-a="drill" data-l="${k}">单步练习<small>${dn} / 10</small></button>
@@ -1331,19 +1606,21 @@ function openDrill(k, j) {
   const L = SE.LESSONS[k], done = practice.drills[L.id];
   if (j == null) { j = 0; for (let x = 0; x < 10; x++) if (done[x] !== 1) { j = x; break; } }
   const st = stateFrom(LESSON_DATA[k].drills[j]);
-  T = { mode: "drill", k, j, st, v0: st.val.slice(), insts: lessonInsts(k, st), frames: null, fi: 0, sel: -1, solved: false, msg: L.task, cls: "", shake: -1 };
+  T = { mode: "drill", k, j, st, v0: st.val.slice(), insts: lessonInsts(k, st), frames: null, fi: 0, sel: -1, solved: false, msg: L.task, cls: "", shake: -1, wasDone: done[j] === 1 };
   drillAt = performance.now();
   show("lesson"); renderT();
 }
+// 看完讲解回到题目：还没做完的，换回任务说明（不再显示看讲解之前的那条报错）
+function backToDrill() { T.frames = null; if (!T.solved) { T.msg = SE.LESSONS[T.k].task; T.cls = ""; } renderT(); }
 function lessonBack() {
-  if (T && T.mode === "drill" && T.frames) { T.frames = null; renderT(); return; }
+  if (T && T.mode === "drill" && T.frames) { backToDrill(); return; }
   openTech();
 }
 function renderT() {
   const L = SE.LESSONS[T.k], st = T.st, notesOn = L.kind === "elim";
   const f = T.frames ? T.frames[T.fi] : null, F = frameSets(f && !f.intro ? f : null);
-  $("lTitle").textContent = L.name;
-  $("lSub").textContent = T.mode === "teach" ? "讲解" : `单步练习 ${T.j + 1} / 10` + (practice.drills[L.id][T.j] === 1 ? " ✓" : "");
+  $("lTitle").textContent = wj(L.name);
+  $("lSub").textContent = T.mode === "teach" ? "讲解" : `单步练习 ${T.j + 1} / 10` + (T.solved ? " ✓" : T.wasDone ? "（做对过）" : "");
   for (let i = 0; i < 81; i++) {
     const c = tcells[i];
     const v = f ? (T.v0 || st.val)[i] : st.val[i];
@@ -1367,6 +1644,7 @@ function renderT() {
     c.classList.toggle("h-zone", F.zone.has(i));
     c.classList.toggle("h-pat", F.pat.has(i));
     c.classList.toggle("h-tgt", F.tgt.has(i));
+    c.classList.toggle("h-no", F.no.has(i));
     c.classList.toggle("h-ghost", !!ghost);
     c.classList.toggle("shake", T.shake === i);
   }
@@ -1374,20 +1652,20 @@ function renderT() {
   const A = $("tBtnA"), B = $("tBtnB");
   $("tPanel").className = "tpanel" + (!f && T.cls ? " " + T.cls : "");
   if (f) {
-    $("tStep").textContent = f.intro ? "这种方法是什么" : `第 ${T.fi} 步，共 ${T.frames.length - 1} 步` + (f.tech && L.techs.length > 1 ? " · " + SE.TECH_NAME[f.tech] : "");
-    $("tText").textContent = f.text;
+    $("tStep").textContent = wj(f.intro ? (T.mode === "teach" ? "这种方法是什么" : "这一题的推理") : `第 ${T.fi} 步，共 ${T.frames.length - 1} 步` + (f.tech && L.techs.length > 1 ? " · " + SE.TECH_NAME[f.tech] : ""));
+    $("tText").textContent = wj(f.text);
     A.textContent = "上一步"; A.disabled = T.fi === 0;
     const last = T.fi === T.frames.length - 1;
     B.textContent = last ? (T.mode === "teach" ? "开始练习" : "回到题目") : "下一步";
   } else {
     const sc = T.mode === "drill" && notesOn && T.sel >= 0 && !st.val[T.sel] ? st.cand[T.sel] & ~st.removed[T.sel] : 0;
-    $("tStep").textContent = T.solved ? "完成" : sc ? "选中的格子 · 候选数 " + [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(d => (sc >> (d - 1)) & 1).join(" ") : "练习";
-    $("tText").textContent = T.msg;
+    $("tStep").textContent = T.solved ? "完成" : sc ? "候选数 " + [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(d => (sc >> (d - 1)) & 1).join(" ") : "练习";
+    $("tText").textContent = wj(T.msg);
     A.disabled = false; A.textContent = T.solved ? "看推理" : "看讲解";
     B.textContent = T.j < 9 ? "下一题" : "完成";
   }
   $("lesson").classList.toggle("teach", !!f);
-  $("tPanel").scrollTop = 0; scrollCue($("tPanel"), $("tMore"));
+  $("tPanel").scrollTop = 0; fitLesson();
 }
 $("tPanel").addEventListener("scroll", () => scrollCue($("tPanel"), $("tMore")));
 $("setBody").addEventListener("scroll", () => scrollCue($("setBody"), $("setMore")));
@@ -1415,7 +1693,7 @@ $("tBtnB").onclick = e => {
   if (T.frames) {
     if (T.fi < T.frames.length - 1) { T.fi++; renderT(); return; }
     if (T.mode === "teach") { openDrill(T.k); return; }
-    T.frames = null; renderT(); return;
+    backToDrill(); return;
   }
   if (T.j < 9) openDrill(T.k, T.j + 1);
   else { const id = SE.LESSONS[T.k].id, n = Object.values(practice.drills[id]).filter(v => v === 1).length;
@@ -1433,7 +1711,7 @@ function tmsg(text, cls, shake) { T.msg = text; T.cls = cls || ""; T.shake = sha
 function tinput(d) {
   if (!T || T.mode !== "drill" || T.frames) return;
   const L = SE.LESSONS[T.k], st = T.st, i = T.sel, b = 1 << (d - 1);
-  if (T.solved) { tmsg("这一题已经完成了，点“下一题”继续。", "ok"); return; }
+  if (T.solved) { tmsg(`这一题已经完成了，点“${T.j < 9 ? "下一题" : "完成"}”继续。`, "ok"); return; }
   if (i < 0) { tmsg("先点一个格子，再点数字。", "bad"); return; }
   if (st.val[i]) { tmsg("这一格已经有数字了，换一个空格。", "bad", i); return; }
   if (L.kind === "place") {
@@ -1441,7 +1719,8 @@ function tinput(d) {
     if (!(st.cand[i] & b)) {
       const p = PEERS[i].find(q => st.val[q] === d);
       tmsg(`这一格不能填 ${d}：${p != null ? `第 ${ROW(p) + 1} 行第 ${COL(p) + 1} 列已经有 ${d} 了，它们在同一` + (ROW(p) === ROW(i) ? "行" : COL(p) === COL(i) ? "列" : "宫") : `同一行、列或宫里已经有 ${d} 了`}。`, "bad", i);
-    } else tmsg(`用“${L.name}”还推不出这一格就是 ${d}，再找找。`, "bad", i);
+    } else if (drillSol()[i] === d) tmsg(`${d} 确实是这一格的答案，不过用“${L.name}”还推不出来。这道练习要找用这种方法就能确定的格子，再找找。`);
+    else tmsg(`这一格不是 ${d}，再找找。`, "bad", i);
     return;
   }
   if (st.removed[i] & b) { tmsg(`${d} 已经从这一格划掉了，继续找别的。`, "ok"); return; }   // 双击时第二下别显示成红色报错
@@ -1449,8 +1728,27 @@ function tinput(d) {
   if (T.insts.some(x => x.elim.some(([c, dd]) => c === i && dd === d))) {
     st.removed[i] |= b;
     if (T.insts.some(x => x.elim.every(([c, dd]) => st.removed[c] & (1 << (dd - 1))))) { drillSolved(); return; }
-    tmsg(`对，${d} 可以从这一格划掉。这一步还能从别的格子划掉候选数，继续找。`, "ok");
-  } else tmsg(`这个候选数用“${L.name}”还划不掉，再找找。`, "bad", i);
+    tmsg(`对，${d} 可以从这一格划掉。这一步还有别的候选数可以划掉，继续找。`, "ok");
+  } else tmsg(drillSol()[i] === d ? `${d} 就是这一格的答案，不能划掉。` : `这个候选数用“${L.name}”还划不掉，再找找。`, "bad", i);
+}
+// 单步练习这一题的答案（练习数据里没存，按需解一次）
+function drillSol() {
+  if (T.sol) return T.sol;
+  const v = T.v0.slice();
+  const ok = (i, d) => PEERS[i].every(p => v[p] !== d);
+  const go = () => {
+    let best = -1, bc = null;
+    for (let i = 0; i < 81; i++) if (!v[i]) {
+      const c = []; for (let d = 1; d <= 9; d++) if (ok(i, d)) c.push(d);
+      if (!c.length) return false;
+      if (!bc || c.length < bc.length) { best = i; bc = c; if (c.length === 1) break; }
+    }
+    if (best < 0) return true;
+    for (const d of bc) { v[best] = d; if (go()) return true; }
+    v[best] = 0; return false;
+  };
+  T.sol = go() ? v : T.v0.slice();
+  return T.sol;
 }
 function drillSolved() {
   const L = SE.LESSONS[T.k];
@@ -1479,7 +1777,7 @@ window.appResume = function () { paused = false; };
 window.handleBack = function () {
   const open = document.querySelector(".sheet-bg.on");
   if (open) { if (open.id === "winSheet") { closeSheet("winSheet"); goHome(); } else closeSheet(open.id); return true; }
-  if (HC || (H && H.open)) { closeHintPanel(); return true; }
+  if (HC || (H && H.open)) { closeHintPanel(true); return true; }
   if ($("tipPanel").classList.contains("on")) { hideTip(); return true; }
   if ($("game").classList.contains("on")) { goHome(); return true; }
   if ($("lesson").classList.contains("on")) { lessonBack(); return true; }

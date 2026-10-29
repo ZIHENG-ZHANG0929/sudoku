@@ -62,7 +62,7 @@ async def main():
         await pg.click('#modeSw button[data-m="6"]')
         await pg.evaluate("for (let k = 1; k < 50; k++) PROG[6].stars[k] = 3; store.set('progress6', PROG[6]); renderHome(); startLevel(50)")
         await pg.evaluate(SOLVE, P6[49]["s"]); await pg.wait_for_timeout(450)
-        check(await pg.text_content("#winTitle") == "全部 50 关完成" and await pg.evaluate("$('winNext').style.display") == "none", "last 6x6 level win sheet")
+        check(await pg.text_content("#winTitle") == "6×6 · 全部 50 关完成" and await pg.evaluate("$('winNext').style.display") == "none", "last 6x6 level win sheet")
         await pg.evaluate("closeSheet('winSheet'); goHome()")
         check(await pg.text_content("#continueText") == "已全部通关", "6x6 all cleared label")
         # 8) 清除进度：两套都清

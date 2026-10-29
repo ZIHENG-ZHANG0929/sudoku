@@ -15,7 +15,7 @@ function run(E, P, NN, tag) {
         (st.inst.elim || []).forEach(([c, d]) => { if (sol[c] === d) bad.push(`${tag}${li + 1}: eliminated answer ${c}=${d}`); });
         st.frames.forEach(f => {
           if (/高亮/.test(f.text) && !f.pat.length && !f.tgt.length && !f.zone.length) bad.push(`${tag}${li + 1}: "高亮" frame without highlight: ${f.text}`);
-          if (/别的空格都放不了/.test(f.text) && !f.tgt.length) bad.push(`${tag}${li + 1}: empty blocker frame: ${f.text}`);
+          if (/别的空格都放不了|另一个空格也放不了/.test(f.text) && !f.no.length) bad.push(`${tag}${li + 1}: empty blocker frame: ${f.text}`);
           if (!f.text || /undefined|NaN/.test(f.text)) bad.push(`${tag}${li + 1}: bad text ${f.text}`);
         });
       });
@@ -52,6 +52,28 @@ run(SE.six, P6, 36, "6x6 L");
     const insts = r.steps.map(s => s.inst);
     if (+p.s[r.place[0]] !== r.place[1]) bad.push("random: wrong place");
     for (let i = 0; i < insts.length - 1; i++) if (SE.replay(v, insts.slice(0, i).concat(insts.slice(i + 1)))) bad.push(`random ${t}: step ${i} not needed`);
+  }
+}
+// 玩家记了笔记（已经删掉一些不可能的数）：讲解只能按笔记推理，不能让人去划掉笔记里本来就没有的数；填的数仍然是答案
+{
+  let seed = 11; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (const [E, P, NN, tag] of [[SE, P9, 81, "9x9"], [SE.six, P6, 36, "6x6"]]) {
+    for (let t = 0; t < 600; t++) {
+      const p = P[t % P.length], sol = [...p.s].map(Number), v = [...p.p].map(Number);
+      for (let g = 0; g < (t % 20); g++) { const r = E.hintChain(v); if (r.stuck) break; v[r.place[0]] = r.place[1]; }
+      const b = E.basicCands(v), notes = v.map(() => 0);
+      for (let i = 0; i < NN; i++) if (!v[i] && rnd() < 0.6) {
+        let m = b[i];
+        for (let d = 1; d <= E.N; d++) if (d !== sol[i] && (m >> (d - 1)) & 1 && rnd() < 0.3) m &= ~(1 << (d - 1));
+        notes[i] = m;
+      }
+      const r = E.hintChain(v, 0, notes); if (r.stuck) continue;
+      if (sol[r.place[0]] !== r.place[1]) bad.push(`${tag} notes ${t}: wrong place`);
+      r.steps.forEach(st => {
+        st.frames.forEach(f => f.strike.forEach(([c, d]) => { if (notes[c] && !((notes[c] >> (d - 1)) & 1)) bad.push(`${tag} notes ${t}: strikes ${d} at cell ${c}, not in the player's notes`); }));
+        for (let i = 0; i < NN; i++) if (notes[i] && (st.cand[i] & ~notes[i])) bad.push(`${tag} notes ${t}: shows candidates the player already removed at cell ${i}`);
+      });
+    }
   }
 }
 if (maxSteps > 6) bad.push("hint chain too long: " + maxSteps + " steps");
